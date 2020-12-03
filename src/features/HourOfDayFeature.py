@@ -7,4 +7,4 @@ class HourOfDayFeature(Feature):
         self.name = 'Hour of day'
 
     def get_result(self, window):
-        return int(window.events[0].time[0:2])
+        return int(window.events[0].time[0:2]) / 24

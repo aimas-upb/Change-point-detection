@@ -19,10 +19,12 @@ from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser
 
 from sklearn.gaussian_process.kernels import RBF
-from sklearn.datasets import load_iris
-
+import numpy as np
+import timeit
 
 if __name__ == "__main__":
+    start = timeit.default_timer()
+
     WINDOW_SIZE = 30
 
     arg_parser = ArgumentParser(description='.')
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     for index in range(0, len(all_events) - WINDOW_SIZE + 1):
         # get current 30 events window
         window = Window(all_events[index:WINDOW_SIZE + index])
-        # print(seconds_past_mid_night_feature.get_result(window))
+        # print(count_of_events_feature.get_result(window))
         # get array of features from window
         feature_window = feature_extractor.extract_features_from_window(window)
         feature_windows.append(feature_window)
@@ -96,12 +98,21 @@ if __name__ == "__main__":
         encoded_feature_window.append(feature_window[12])
         encoded_feature_windows.append(encoded_feature_window)
 
-        print(encoded_feature_window)
+        # print(encoded_feature_window)
 
-    # X, y = load_iris(return_X_y=True)
-    # print(X)
-    # print(y)
-
+    g = []
     kernel = 1.0 * RBF(1.0)
-    result = kernel.__call__(encoded_feature_windows[0], encoded_feature_windows[1])
-    print(result)
+
+    for index in range(0, len(encoded_feature_windows) - 4):
+        fv1 = np.array(encoded_feature_windows[index]).reshape(1, len(encoded_feature_windows[index]))
+        fv2 = np.array(encoded_feature_windows[index + 1]).reshape(1, len(encoded_feature_windows[index + 1]))
+        fv3 = np.array(encoded_feature_windows[index + 2]).reshape(1, len(encoded_feature_windows[index + 2]))
+        fv4 = np.array(encoded_feature_windows[index + 3]).reshape(1, len(encoded_feature_windows[index + 3]))
+
+        current_g = kernel.__call__(fv3, fv1) * kernel.__call__(fv3, fv2) + kernel.__call__(fv4, fv1) * kernel.__call__(fv4, fv2)
+        g.append(current_g)
+
+    # print(g)
+
+    stop = timeit.default_timer()
+    print('Time: ', stop - start)

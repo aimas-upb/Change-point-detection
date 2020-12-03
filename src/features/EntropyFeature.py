@@ -10,4 +10,5 @@ class EntropyFeature(Feature):
 
     def get_result(self, window):
         count_of_event_feature = CountOfEventsFeature()
-        return round(entropy(count_of_event_feature.get_result(window)), 4)
+        # return entropy(count_of_event_feature.get_result(window))
+        return 0

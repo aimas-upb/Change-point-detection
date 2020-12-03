@@ -10,4 +10,4 @@ class DayOfWeekFeature(Feature):
         self.name = 'Day of week'
 
     def get_result(self, window):
-        return datetime.datetime.strptime(window.events[0].date, DATE_FORMAT).weekday()
+        return datetime.datetime.strptime(window.events[0].date, DATE_FORMAT).weekday() / 7
