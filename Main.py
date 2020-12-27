@@ -1,4 +1,8 @@
+import timeit
 from argparse import ArgumentParser
+
+import numpy as np
+from sklearn.gaussian_process.kernels import RBF
 
 from Window import Window
 from src.features.CountOfEventsFeature import CountOfEventsFeature
@@ -18,9 +22,76 @@ from src.features.extractor.FeatureExtractor import FeatureExtractor
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser
 
-from sklearn.gaussian_process.kernels import RBF
-import numpy as np
-import timeit
+
+def build_features():
+    number_of_sensor_events_feature = NumberOfSensorEventsFeature()
+    window_duration_feature = WindowDurationFeature()
+    most_recent_sensor_feature = MostRecentSensorFeature()
+    most_frequent_sensor_feature = MostFrequentSensorFeature()
+    last_sensor_location = LastSensorLocationFeature()
+    dominant_location_feature = DominantLocationFeature()
+    number_of_transitions_feature = NumberOfTransitionsFeature()
+    count_of_events_feature = CountOfEventsFeature()
+    absolute_time_between_events_feature = TimeBetweenEventsFeature('absolute')
+    proportional_time_between_events_feature = TimeBetweenEventsFeature('proportional')
+    entropy_feature = EntropyFeature()
+    day_of_week_feature = DayOfWeekFeature()
+    hour_of_day_feature = HourOfDayFeature()
+    seconds_past_mid_night_feature = SecondsPastMidNightFeature()
+
+    return [window_duration_feature,
+            most_recent_sensor_feature,
+            most_frequent_sensor_feature,
+            last_sensor_location,
+            dominant_location_feature,
+            number_of_transitions_feature,
+            count_of_events_feature,
+            absolute_time_between_events_feature,
+            proportional_time_between_events_feature,
+            entropy_feature,
+            hour_of_day_feature,
+            day_of_week_feature,
+            seconds_past_mid_night_feature]
+
+
+def compute_H(N, current_x, previous_x):
+    H = []
+
+    for i in range(0, N):
+        h = np.zeros((1, 2))
+        for j in range(0, N):
+            h = h + kernel.__call__(np.array(current_x[j]).reshape(1, len(current_x[j])),
+                                    np.array(previous_x[i]).reshape(1, len(previous_x[i])))
+        H.append(h)
+
+    return H
+
+
+def compute_theta(h, regularization_param):
+    return -1 * np.array(h) / regularization_param
+
+
+def compute_G(N, current_x, previous_x):
+    G = []
+
+    for i in range(0, N):
+        g = np.zeros((1, 2))
+        for j in range(0, N):
+            g = g + theta[i] * kernel.__call__(np.array(previous_x[i]).reshape(1, len(previous_x[i])),
+                                               np.array(current_x[j]).reshape(1, len(current_x[j])))
+        G.append(g)
+
+    return G
+
+
+def compute_SEP(N, G):
+    SEP = []
+
+    for index in range(0, len(G) - N):
+        SEP.append(max(0, np.sum(G[index:index + N])))
+
+    return SEP
+
 
 if __name__ == "__main__":
     start = timeit.default_timer()
@@ -38,45 +109,16 @@ if __name__ == "__main__":
     all_events = parser.events
 
     # features
-    number_of_sensor_events_feature = NumberOfSensorEventsFeature()
-    window_duration_feature = WindowDurationFeature()
-    most_recent_sensor_feature = MostRecentSensorFeature()
-    most_frequent_sensor_feature = MostFrequentSensorFeature()
-    last_sensor_location = LastSensorLocationFeature()
-    dominant_location_feature = DominantLocationFeature()
-    number_of_transitions_feature = NumberOfTransitionsFeature()
-    count_of_events_feature = CountOfEventsFeature()
-    absolute_time_between_events_feature = TimeBetweenEventsFeature('absolute')
-    proportional_time_between_events_feature = TimeBetweenEventsFeature('proportional')
-    entropy_feature = EntropyFeature()
-    # unused yet
-    day_of_week_feature = DayOfWeekFeature()
-    hour_of_day_feature = HourOfDayFeature()
-    seconds_past_mid_night_feature = SecondsPastMidNightFeature()
-
-    features = [window_duration_feature,
-                most_recent_sensor_feature,
-                most_frequent_sensor_feature,
-                last_sensor_location,
-                dominant_location_feature,
-                number_of_transitions_feature,
-                count_of_events_feature,
-                absolute_time_between_events_feature,
-                proportional_time_between_events_feature,
-                entropy_feature,
-                hour_of_day_feature,
-                day_of_week_feature,
-                seconds_past_mid_night_feature]
-
+    features = build_features()
     feature_extractor = FeatureExtractor(features)
 
     feature_windows = []
     encoded_feature_windows = []
 
     oneHotEncoder = Encoder()
-    for index in range(0, len(all_events) - WINDOW_SIZE + 1):
+    for i in range(0, len(all_events) - WINDOW_SIZE + 1):
         # get current 30 events window
-        window = Window(all_events[index:WINDOW_SIZE + index])
+        window = Window(all_events[i:WINDOW_SIZE + i])
         # print(count_of_events_feature.get_result(window))
         # get array of features from window
         feature_window = feature_extractor.extract_features_from_window(window)
@@ -100,19 +142,30 @@ if __name__ == "__main__":
 
         # print(encoded_feature_window)
 
-    g = []
+    G = []
     kernel = 1.0 * RBF(1.0)
+    regularization_param = 1
+    N = 3
+    X = encoded_feature_windows
 
-    for index in range(0, len(encoded_feature_windows) - 4):
-        fv1 = np.array(encoded_feature_windows[index]).reshape(1, len(encoded_feature_windows[index]))
-        fv2 = np.array(encoded_feature_windows[index + 1]).reshape(1, len(encoded_feature_windows[index + 1]))
-        fv3 = np.array(encoded_feature_windows[index + 2]).reshape(1, len(encoded_feature_windows[index + 2]))
-        fv4 = np.array(encoded_feature_windows[index + 3]).reshape(1, len(encoded_feature_windows[index + 3]))
+    for index in range(0, len(X) + 1 - 2 * N):
+        previous_x = X[index:N + index]
+        assert len(previous_x) == N
 
-        current_g = kernel.__call__(fv3, fv1) * kernel.__call__(fv3, fv2) + kernel.__call__(fv4, fv1) * kernel.__call__(fv4, fv2)
-        g.append(current_g)
+        current_x = X[N + index:2 * N + index]
+        assert len(current_x) == N
 
-    # print(g)
+        h = compute_H(N, current_x, previous_x)
+        assert len(h) == N
+
+        theta = compute_theta(h, regularization_param)
+        assert len(theta) == N
+
+        g = compute_G(N, current_x, previous_x)
+        G.extend(g)
+
+    SEP = compute_SEP(N, G)
+    print(SEP)
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)
