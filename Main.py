@@ -88,7 +88,7 @@ def compute_SEP(N, G):
     SEP = []
 
     for index in range(0, len(G) - N):
-        SEP.append(max(0, np.sum(G[index:index + N])))
+        SEP.append(max(0, 0.5 - (np.sum(G[index:index + N])) / N))
 
     return SEP
 
@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     G = []
     kernel = 1.0 * RBF(1.0)
-    regularization_param = 1
+    regularization_param = 0.1
     N = 3
     X = encoded_feature_windows
 
@@ -165,6 +165,7 @@ if __name__ == "__main__":
         G.extend(g)
 
     SEP = compute_SEP(N, G)
+    assert len(SEP) % N == 0
     print(SEP)
 
     stop = timeit.default_timer()
