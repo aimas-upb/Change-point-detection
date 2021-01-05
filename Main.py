@@ -58,11 +58,11 @@ def compute_H(N, current_x, previous_x):
     H = []
 
     for i in range(0, N):
-        h = np.zeros((1, 2))
+        h = np.zeros((1, 1))
         for j in range(0, N):
             h = h + kernel.__call__(np.array(current_x[j]).reshape(1, len(current_x[j])),
                                     np.array(previous_x[i]).reshape(1, len(previous_x[i])))
-        H.append(h)
+        H.append(np.array(h) / N)
 
     return H
 
@@ -71,7 +71,7 @@ def compute_theta(h, regularization_param):
     return -1 * np.array(h) / regularization_param
 
 
-def compute_G(N, current_x, previous_x):
+def compute_G(N, current_x, previous_x, theta):
     G = []
 
     for i in range(0, N):
@@ -85,12 +85,7 @@ def compute_G(N, current_x, previous_x):
 
 
 def compute_SEP(N, G):
-    SEP = []
-
-    for index in range(0, len(G) - N):
-        SEP.append(max(0, 0.5 - (np.sum(G[index:index + N])) / N))
-
-    return SEP
+    return max(0, 0.5 - (np.sum(G)) / N)
 
 
 if __name__ == "__main__":
@@ -142,17 +137,21 @@ if __name__ == "__main__":
 
         # print(encoded_feature_window)
 
-    G = []
-    kernel = 1.0 * RBF(1.0)
+
+    SEP = []
+    kernel = 1.0 * RBF(10)
     regularization_param = 0.1
     N = 3
     X = encoded_feature_windows
+    print(len(X))
 
-    for index in range(0, len(X) + 1 - 2 * N):
-        previous_x = X[index:N + index]
+    for index in range(N, len(X) + 1 - N):
+        # previous_x = X[index:N + index]
+        previous_x = X[index - N:index]
         assert len(previous_x) == N
 
-        current_x = X[N + index:2 * N + index]
+        # current_x = X[N + index:2 * N + index]
+        current_x = X[index:N + index]
         assert len(current_x) == N
 
         h = compute_H(N, current_x, previous_x)
@@ -161,12 +160,13 @@ if __name__ == "__main__":
         theta = compute_theta(h, regularization_param)
         assert len(theta) == N
 
-        g = compute_G(N, current_x, previous_x)
-        G.extend(g)
+        g = compute_G(N, current_x, previous_x, theta)
 
-    SEP = compute_SEP(N, G)
-    assert len(SEP) % N == 0
-    print(SEP)
+        sep = compute_SEP(N, g)
+        # print(sep)
+        SEP.append(sep)
+
+    print(len(SEP))
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)
