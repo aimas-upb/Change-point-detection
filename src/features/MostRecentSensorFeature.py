@@ -1,4 +1,6 @@
 from src.features.base.Feature import Feature
+from src.utils.Encoder import Encoder
+from src.utils.WindowEventsParser import WindowEventsParser
 
 
 class MostRecentSensorFeature(Feature):
@@ -7,4 +9,7 @@ class MostRecentSensorFeature(Feature):
 
     # returns last sensor of window
     def get_result(self, window):
-        return window.events[-1].sensor.name
+        oneHotEncoder = Encoder()
+        parser = WindowEventsParser()
+        return oneHotEncoder.encode_attribute(window.events[-1].sensor.name, parser.sensor_names)
+

@@ -3,6 +3,7 @@ from Sensor import Sensor
 
 import codecs
 import numpy as np
+import pickle
 
 class WindowEventsParser:
     events = []
@@ -12,11 +13,13 @@ class WindowEventsParser:
     def read_data_from_file(self, file):
         data_file = self.safe_open(file)
         lines = data_file.readlines()
+        labels = []
 
-        for line in lines:
-            elements = line.split()
+        for index in range(0, len(lines)):
+            elements = lines[index].split()
             date = elements[0]
             time = elements[1]
+            label = elements[-1]
 
             # checks if data has locations
             if len(elements) == 4:
@@ -31,6 +34,13 @@ class WindowEventsParser:
                     self.sensor_locations.append(np.array([elements[2]]))
 
             self.events.append(Event(date, time, sensor))
+
+            labels.append((index + 1, label))
+
+        # with open('pickles/HH101/hh110-index-label.pkl', 'wb') as file:
+        #     pickle.dump(labels, file)
+
+        # print(labels)
 
     def safe_open(self, input_file_path, rw="r"):
         try:

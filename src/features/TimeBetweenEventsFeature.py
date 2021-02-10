@@ -21,7 +21,10 @@ class TimeBetweenEventsFeature(Feature):
 
         if self.mode == 'proportional':
             for i in range(1, len(events)):
-                result.append(self.get_time_between_two_events(events[i], events[i - 1]) / self.get_window_duration(window))
+                if self.get_window_duration(window) != 0:
+                    result.append(self.get_time_between_two_events(events[i], events[i - 1]) / self.get_window_duration(window))
+                else:
+                    result.append(0)
 
         return result
 
