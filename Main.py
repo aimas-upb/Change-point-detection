@@ -32,10 +32,12 @@ def build_features():
     last_sensor_location = LastSensorLocationFeature()
     dominant_location_feature = DominantLocationFeature()
     number_of_transitions_feature = NumberOfTransitionsFeature()
+    entropy_feature = EntropyFeature()
+
     count_of_events_feature = CountOfEventsFeature()
     absolute_time_between_events_feature = TimeBetweenEventsFeature('absolute')
     proportional_time_between_events_feature = TimeBetweenEventsFeature('proportional')
-    entropy_feature = EntropyFeature()
+
     day_of_week_feature = DayOfWeekFeature()
     hour_of_day_feature = HourOfDayFeature()
     seconds_past_mid_night_feature = SecondsPastMidNightFeature()
@@ -162,7 +164,7 @@ if __name__ == "__main__":
 
     print(SEP)
 
-    # with open('pickles/HH101/bune/hh-test.pkl', 'wb') as file:
+    # with open('pickles/HH102/HH102-w30-n2-k10-l114141414.pkl', 'wb') as file:
     #     pickle.dump(SEP, file)
 
     stop = timeit.default_timer()
