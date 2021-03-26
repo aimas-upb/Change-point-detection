@@ -1,6 +1,7 @@
+import datetime
+
 from src.features.WindowDurationFeature import WindowDurationFeature
 from src.features.base.Feature import Feature
-import datetime
 
 
 class TimeBetweenEventsFeature(Feature):
@@ -8,21 +9,24 @@ class TimeBetweenEventsFeature(Feature):
     mode = ''
 
     def __init__(self, mode):
-        self.name = 'Count of events'
+        self.name = 'Time between events proportional'
         self.mode = mode
 
     def get_result(self, window):
         result = [0]
         events = window.events
+        number_of_events = len(events)
 
         if self.mode == 'absolute':
-            for i in range(1, len(events)):
+            for i in range(1, number_of_events):
                 result.append(self.get_time_between_two_events(events[i], events[i - 1]))
 
         if self.mode == 'proportional':
-            for i in range(1, len(events)):
-                if self.get_window_duration(window) != 0:
-                    result.append(self.get_time_between_two_events(events[i], events[i - 1]) / self.get_window_duration(window))
+            window_duration = self.get_window_duration(window)
+
+            for i in range(1, number_of_events):
+                if window_duration != 0:
+                    result.append(self.get_time_between_two_events(events[i], events[i - 1]) / window_duration)
                 else:
                     result.append(0)
 
@@ -31,7 +35,9 @@ class TimeBetweenEventsFeature(Feature):
     def get_time_between_two_events(self, first_event, second_event):
         first_event_time = datetime.datetime.strptime(first_event.date + ' ' + first_event.time, self.TIME_FORMAT)
         second_event_time = datetime.datetime.strptime(second_event.date + ' ' + second_event.time, self.TIME_FORMAT)
-        return (second_event_time - first_event_time).microseconds / 1e6
+        dt = second_event_time - first_event_time
+
+        return round(((dt.seconds * 1e6) + dt.microseconds) / 60 / 1e6, 2)
 
     def get_window_duration(self, window):
         window_duration_feature = WindowDurationFeature()

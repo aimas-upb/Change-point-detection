@@ -13,6 +13,11 @@ class WindowDurationFeature(Feature):
     def get_result(self, window):
         first_event = window.events[0]
         last_event = window.events[-1]
+
         first_event_time = datetime.datetime.strptime(first_event.date + ' ' + first_event.time, self.TIME_FORMAT)
         last_event_time = datetime.datetime.strptime(last_event.date + ' ' + last_event.time, self.TIME_FORMAT)
-        return (last_event_time - first_event_time).microseconds / 1e6
+
+        dt = last_event_time - first_event_time
+
+        return round(((dt.seconds * 1e6) + dt.microseconds) / 60 / 1e6, 2)
+

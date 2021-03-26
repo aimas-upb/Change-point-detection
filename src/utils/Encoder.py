@@ -1,6 +1,5 @@
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
-from src.utils.WindowEventsParser import WindowEventsParser
 
 
 class Encoder:

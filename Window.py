@@ -3,22 +3,15 @@ class Window:
         self.events = events
 
     def get_sensors(self):
-        sensors = []
-        for event in self.events:
-            sensors.append(event.sensor)
-        return sensors
+        return [event.sensor for event in self.events]
 
     def get_sensor_names(self):
-        sensor_names = []
-        for sensor in self.get_sensors():
-            sensor_names.append(sensor.name)
-        return sensor_names
+        window_sensors = self.get_sensors()
+        return [sensor.name for sensor in window_sensors]
 
     def get_sensor_locations(self):
-        sensor_locations = []
-        for sensor in self.get_sensors():
-            sensor_locations.append(sensor.location)
-        return sensor_locations
+        window_sensors = self.get_sensors()
+        return [sensor.location for sensor in window_sensors]
 
     def to_string(self):
         print("WINDOW: ")

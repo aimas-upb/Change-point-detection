@@ -6,5 +6,6 @@ class HourOfDayFeature(Feature):
     def __init__(self):
         self.name = 'Hour of day'
 
+    # TODO may not be taken into consideration for SEP points
     def get_result(self, window):
-        return int(window.events[0].time[0:2]) / 24
+        return int(window.events[-1].time[0:2]) / 24

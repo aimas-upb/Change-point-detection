@@ -11,4 +11,4 @@ class LastSensorLocationFeature(Feature):
     def get_result(self, window):
         oneHotEncoder = Encoder()
         parser = WindowEventsParser()
-        return oneHotEncoder.encode_attribute( window.events[-1].sensor.location, parser.sensor_locations)
+        return oneHotEncoder.encode_attribute(window.events[-1].sensor.location, parser.sensor_locations)

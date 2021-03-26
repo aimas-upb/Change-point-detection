@@ -4,6 +4,7 @@ from Window import Window
 from src.features.CountOfEventsFeature import CountOfEventsFeature
 from src.features.DayOfWeekFeature import DayOfWeekFeature
 from src.features.DominantLocationFeature import DominantLocationFeature
+from src.features.EachSensorLastActivationFeature import EachSensorLastActivationFeature
 from src.features.EntropyFeature import EntropyFeature
 from src.features.HourOfDayFeature import HourOfDayFeature
 from src.features.LastSensorLocation import LastSensorLocationFeature
@@ -34,6 +35,7 @@ def build_features():
     day_of_week_feature = DayOfWeekFeature()
     hour_of_day_feature = HourOfDayFeature()
     seconds_past_mid_night_feature = SecondsPastMidNightFeature()
+    each_sensor_last_activation_time_feature = EachSensorLastActivationFeature()
 
     return [window_duration_feature,
             most_recent_sensor_feature,
@@ -47,9 +49,8 @@ def build_features():
             entropy_feature,
             hour_of_day_feature,
             day_of_week_feature,
-            seconds_past_mid_night_feature]
-
-    # return [absolute_time_between_events_feature]
+            seconds_past_mid_night_feature,
+            each_sensor_last_activation_time_feature]
 
 
 if __name__ == "__main__":
@@ -79,17 +80,19 @@ if __name__ == "__main__":
     last_window = Window(all_events[EVENT_INDEX - WINDOW_LENGTH - 1:EVENT_INDEX - 1])
     last_feature_window = feature_extractor.extract_features_from_window(last_window)
     print('------ LAST FEATURE WINDOW -------')
-    print(last_feature_window)
+    # print(last_feature_window)
     print('Length: ' + str(len(last_feature_window)) + '\n')
 
     current_window = Window(all_events[EVENT_INDEX - WINDOW_LENGTH:EVENT_INDEX])
     current_feature_window = feature_extractor.extract_features_from_window(current_window)
     print('------ CURRENT FEATURE WINDOW -------')
-    print(current_feature_window)
+    # print(current_feature_window)
     print('Length: ' + str(len(current_feature_window)) + '\n')
 
     next_window = Window(all_events[EVENT_INDEX - WINDOW_LENGTH + 1:EVENT_INDEX + 1])
     next_feature_window = feature_extractor.extract_features_from_window(next_window)
     print('------ NEXT FEATURE WINDOW -------')
-    print(next_feature_window)
+    # print(next_feature_window)
     print('Length: ' + str(len(next_feature_window)))
+
+    

@@ -1,16 +1,17 @@
 import timeit
 from argparse import ArgumentParser
 
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as optimize
+import seaborn as sns
 from sklearn.gaussian_process.kernels import RBF
-import pickle
-
 
 from Window import Window
 from src.features.CountOfEventsFeature import CountOfEventsFeature
 from src.features.DayOfWeekFeature import DayOfWeekFeature
 from src.features.DominantLocationFeature import DominantLocationFeature
+from src.features.EachSensorLastActivationFeature import EachSensorLastActivationFeature
 from src.features.EntropyFeature import EntropyFeature
 from src.features.HourOfDayFeature import HourOfDayFeature
 from src.features.LastSensorLocation import LastSensorLocationFeature
@@ -41,6 +42,7 @@ def build_features():
     day_of_week_feature = DayOfWeekFeature()
     hour_of_day_feature = HourOfDayFeature()
     seconds_past_mid_night_feature = SecondsPastMidNightFeature()
+    each_sensor_last_activation_time_feature = EachSensorLastActivationFeature()
 
     return [window_duration_feature,
             most_recent_sensor_feature,
@@ -52,9 +54,10 @@ def build_features():
             absolute_time_between_events_feature,
             proportional_time_between_events_feature,
             entropy_feature,
-            hour_of_day_feature,
-            day_of_week_feature,
-            seconds_past_mid_night_feature]
+            seconds_past_mid_night_feature,
+            each_sensor_last_activation_time_feature]
+
+    # return [each_sensor_last_activation_time_feature]
 
 
 def compute_H(N, current_x, previous_x):
@@ -64,7 +67,7 @@ def compute_H(N, current_x, previous_x):
         h = np.zeros((1, 1))
         for j in range(0, N):
             kernel_val = kernel.__call__(np.array(current_x[j]).reshape(1, len(current_x[j])),
-                                    np.array(previous_x[i]).reshape(1, len(previous_x[i])))
+                                         np.array(previous_x[i]).reshape(1, len(previous_x[i])))
 
             h = h + kernel_val
         H.append(h[0][0] / N)
@@ -73,8 +76,8 @@ def compute_H(N, current_x, previous_x):
 
 
 def functie(h, lamda):
-   h = np.array(h)
-   return lambda theta: theta @ h * h @ theta + lamda * theta @ theta
+    h = np.array(h)
+    return lambda theta: theta @ h * h @ theta + lamda * theta @ theta
 
 
 def compute_G(N, current_x, previous_x, theta):
@@ -85,6 +88,7 @@ def compute_G(N, current_x, previous_x, theta):
         for j in range(0, N):
             g = g + theta[i] * kernel.__call__(np.array(previous_x[i]).reshape(1, len(previous_x[i])),
                                                np.array(current_x[j]).reshape(1, len(current_x[j])))
+
         G.append(g[0][0])
 
     return G
@@ -92,6 +96,12 @@ def compute_G(N, current_x, previous_x, theta):
 
 def compute_SEP(N, G):
     return max(0, 0.5 - (np.sum(G)) / N)
+
+
+def display_sep_distribution():
+    sep_values = [tup[0] for tup in SEP]
+    sns.boxplot(data=sep_values)
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -102,16 +112,19 @@ if __name__ == "__main__":
     arg_parser.add_argument('--window_length', type=int, required=True)
     arg_parser.add_argument('--N', type=int, required=True)
     arg_parser.add_argument('--kernel_param', type=float, required=True)
+    arg_parser.add_argument('--l', type=float, required=True)
 
-    # data parser
+    # arguments matcher
     arg = arg_parser.parse_args()
-    data_set_file = arg.file
+    DATA_SET = arg.file
     WINDOW_LENGTH = arg.window_length
     N = arg.N
     KERNEL_PARAM = arg.kernel_param
+    REGULARIZATION_PARAM = arg.l
 
+    # data parser
     parser = WindowEventsParser()
-    parser.read_data_from_file(data_set_file)
+    parser.read_data_from_file(DATA_SET)
     all_events = parser.events
 
     # features
@@ -123,6 +136,7 @@ if __name__ == "__main__":
     oneHotEncoder = Encoder()
 
     for i in range(0, len(all_events) - WINDOW_LENGTH + 1):
+        # print(i)
         # get current 30 events window
         window = Window(all_events[i:WINDOW_LENGTH + i])
         # get array of features from window
@@ -130,23 +144,29 @@ if __name__ == "__main__":
         feature_windows.append(feature_window)
 
     SEP = []
-    partial_SEP = []
     kernel = 1.0 * RBF(KERNEL_PARAM)
-    regularization_param = 1
 
     for index in range(N, len(feature_windows) + 1 - N):
-        print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
+        # print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
         previous_x = feature_windows[index - N:index]
         assert len(previous_x) == N
 
         current_x = feature_windows[index:N + index]
         assert len(current_x) == N
 
+        # TODO matrice de kernele
+        A = []
+
         h = compute_H(N, current_x, previous_x)
         assert len(h) == N
 
-        opt_res = optimize.minimize(functie(h, regularization_param), np.ones((len(h),)), constraints=optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf))
-        theta = opt_res.x
+        # optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
+        #                                  constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf),
+        #                                               optimize.LinearConstraint(A, np.zeros((N,)), np.inf * np.ones((N,)))))
+
+        optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
+                                         constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf)))
+        theta = optimization.x
         assert len(theta) == N
 
         g = compute_G(N, current_x, previous_x, theta)
@@ -154,18 +174,13 @@ if __name__ == "__main__":
         sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
 
         sep = compute_SEP(N, g)
-        partial_SEP.append((sep, sensor_index))
-        # used a partial list to avoid keeping the main list too large
-        if len(partial_SEP) == 5000:
-            SEP.append(partial_SEP)
-            partial_SEP = []
+        SEP.append((sep, sensor_index))
 
-    SEP.append(partial_SEP)
-
-    print(SEP)
-
-    # with open('pickles/HH102/HH102-w30-n2-k10-l114141414.pkl', 'wb') as file:
+    # with open('pickles/HH103/time-normalized/HH103-w' + str(WINDOW_LENGTH) + '-n' + str(N) + '-k' + str(KERNEL_PARAM) + '-l' + str(
+    #         REGULARIZATION_PARAM) + 'asdasdasdas.pkl', 'wb') as file:
     #     pickle.dump(SEP, file)
+
+    display_sep_distribution()
 
     stop = timeit.default_timer()
     print('Time: ', stop - start)

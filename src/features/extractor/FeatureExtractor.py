@@ -21,6 +21,7 @@ class FeatureExtractor:
             # gets the result of each feature in the window
             # each feature has a get_result method that gets the value computed by the given feature
             feature_result = feature.get_result(window)
+            # print(feature.name + ' ' + str(feature_result))
 
             if isinstance(feature_result, list) or isinstance(feature_result, np.ndarray):
                 result.extend(feature_result)

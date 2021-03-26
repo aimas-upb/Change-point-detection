@@ -1,9 +1,10 @@
+import codecs
+
+import numpy as np
+
 from Event import Event
 from Sensor import Sensor
 
-import codecs
-import numpy as np
-import pickle
 
 class WindowEventsParser:
     events = []
@@ -24,23 +25,21 @@ class WindowEventsParser:
             # checks if data has locations
             if len(elements) == 4:
                 sensor = Sensor(elements[2], elements[3], None)
+
                 if elements[2] not in self.sensor_names:
                     self.sensor_names.append([elements[2]])
             else:
                 sensor = Sensor(elements[3], elements[4], elements[2])
+
                 if elements[3] not in self.sensor_names:
                     self.sensor_names.append(np.array([elements[3]]))
+
                 if elements[2] not in self.sensor_locations:
                     self.sensor_locations.append(np.array([elements[2]]))
 
             self.events.append(Event(date, time, sensor))
 
             labels.append((index + 1, label))
-
-        # with open('pickles/HH101/hh110-index-label.pkl', 'wb') as file:
-        #     pickle.dump(labels, file)
-
-        # print(labels)
 
     def safe_open(self, input_file_path, rw="r"):
         try:

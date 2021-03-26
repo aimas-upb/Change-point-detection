@@ -5,7 +5,7 @@ from src.utils.WindowEventsParser import WindowEventsParser
 class CountOfEventsFeature(Feature):
 
     def __init__(self):
-        self.name = 'Count of events'
+        self.name = 'Count of events feature'
 
     def get_result(self, window):
         result = []
