@@ -75,6 +75,28 @@ def compute_H(N, current_x, previous_x):
     return H
 
 
+def compute_H2(A):
+    print(A)
+    return A.sum(axis=1) / N
+
+
+def build_A(N, current_x, previous_x):
+    A = []
+
+    for i in range(0, N):
+        a = []
+        for j in range(0, N):
+            kernel_value = kernel.__call__(np.array(current_x[j]).reshape(1, len(current_x[j])),
+                                     np.array(previous_x[i]).reshape(1, len(previous_x[i])))
+            a.append(kernel_value[0][0])
+        A.append(a)
+
+    result = np.array(A)
+
+    assert (N, N) == result.shape
+    return result
+
+
 def functie(h, lamda):
     h = np.array(h)
     return lambda theta: theta @ h * h @ theta + lamda * theta @ theta
@@ -154,18 +176,19 @@ if __name__ == "__main__":
         current_x = feature_windows[index:N + index]
         assert len(current_x) == N
 
-        # TODO matrice de kernele
-        A = []
+        A = build_A(N, current_x, previous_x)
 
-        h = compute_H(N, current_x, previous_x)
+        # h = compute_H(N, current_x, previous_x)
+        h = compute_H2(A)
+
         assert len(h) == N
 
-        # optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
-        #                                  constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf),
-        #                                               optimize.LinearConstraint(A, np.zeros((N,)), np.inf * np.ones((N,)))))
-
         optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
-                                         constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf)))
+                                         constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf),
+                                                      optimize.LinearConstraint(A, np.zeros((N,)), np.inf * np.ones((N,)))))
+
+        # optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
+        #                                  constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf)))
         theta = optimization.x
         assert len(theta) == N
 
@@ -180,6 +203,7 @@ if __name__ == "__main__":
     #         REGULARIZATION_PARAM) + 'asdasdasdas.pkl', 'wb') as file:
     #     pickle.dump(SEP, file)
 
+    print(SEP)
     display_sep_distribution()
 
     stop = timeit.default_timer()
