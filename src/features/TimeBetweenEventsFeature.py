@@ -35,9 +35,10 @@ class TimeBetweenEventsFeature(Feature):
     def get_time_between_two_events(self, first_event, second_event):
         first_event_time = datetime.datetime.strptime(first_event.date + ' ' + first_event.time, self.TIME_FORMAT)
         second_event_time = datetime.datetime.strptime(second_event.date + ' ' + second_event.time, self.TIME_FORMAT)
-        dt = second_event_time - first_event_time
+        dt = first_event_time - second_event_time
 
-        return round(((dt.seconds * 1e6) + dt.microseconds) / 60 / 1e6, 2)
+        # return round(((dt.seconds * 1e6) + dt.microseconds) / 60 / 1e6, 2)
+        return round(dt.seconds / 60, 2)
 
     def get_window_duration(self, window):
         window_duration_feature = WindowDurationFeature()

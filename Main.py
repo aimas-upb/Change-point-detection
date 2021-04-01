@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy.optimize as optimize
 import seaborn as sns
 from sklearn.gaussian_process.kernels import RBF
@@ -76,7 +77,6 @@ def compute_H(N, current_x, previous_x):
 
 
 def compute_H2(A):
-    print(A)
     return A.sum(axis=1) / N
 
 
@@ -98,8 +98,10 @@ def build_A(N, current_x, previous_x):
 
 
 def functie(h, lamda):
-    h = np.array(h)
-    return lambda theta: theta @ h * h @ theta + lamda * theta @ theta
+    h = np.array(h).reshape((len(h), 1))
+    print(h.shape)
+    # return lambda theta: theta.T @ (h * h @ theta + lamda * theta @ theta
+    return lambda theta: theta.T @ (h @ h.T) @ theta + lamda * theta.T @ theta
 
 
 def compute_G(N, current_x, previous_x, theta):
@@ -122,6 +124,8 @@ def compute_SEP(N, G):
 
 def display_sep_distribution():
     sep_values = [tup[0] for tup in SEP]
+    s = pd.Series(sep_values)
+    print(s.describe())
     sns.boxplot(data=sep_values)
     plt.show()
 
@@ -184,8 +188,12 @@ if __name__ == "__main__":
         assert len(h) == N
 
         optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
-                                         constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf),
-                                                      optimize.LinearConstraint(A, np.zeros((N,)), np.inf * np.ones((N,)))))
+                                         # constraints=[optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf),
+                                         #              optimize.LinearConstraint(A, np.zeros((N,)), np.inf * np.ones((N,)))],
+                                         constraints=({'type': 'ineq', 'fun': lambda x:  sum(abs(x) - 0.1)},
+                                                      {'type': 'ineq', 'fun': lambda x:  A.dot(x)}),
+                                         method='cobyla',
+                                         options={'ftol': 1e-15})
 
         # optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
         #                                  constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf)))
@@ -197,7 +205,7 @@ if __name__ == "__main__":
         sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
 
         sep = compute_SEP(N, g)
-        SEP.append((sep, sensor_index))
+        SEP.append((round(sep, 2), sensor_index))
 
     # with open('pickles/HH103/time-normalized/HH103-w' + str(WINDOW_LENGTH) + '-n' + str(N) + '-k' + str(KERNEL_PARAM) + '-l' + str(
     #         REGULARIZATION_PARAM) + 'asdasdasdas.pkl', 'wb') as file:

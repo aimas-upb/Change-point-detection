@@ -37,7 +37,8 @@ class EachSensorLastActivationFeature(Feature):
             if event.sensor.name == sensor:
                 return datetime.strptime(event.date + ' ' + event.time, self.TIME_FORMAT)
 
-        return self.main_time_tracker[sensor]
+        # return self.main_time_tracker[sensor]
+        return datetime.strptime(window.events[-1].date + ' ' + window.events[-1].time, self.TIME_FORMAT)
 
     def initialize_main_time_tracker(self):
         parser = WindowEventsParser()
