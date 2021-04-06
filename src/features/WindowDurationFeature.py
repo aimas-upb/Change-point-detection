@@ -19,5 +19,5 @@ class WindowDurationFeature(Feature):
 
         dt = last_event_time - first_event_time
 
-        return round(((dt.seconds * 1e6) + dt.microseconds) / 60 / 1e6, 2)
+        return dt.seconds / 60
 

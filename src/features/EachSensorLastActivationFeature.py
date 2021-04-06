@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from Window import Window
 from src.features.base.Feature import Feature
+from src.models.Window import Window
 from src.utils.WindowEventsParser import WindowEventsParser
 
 
@@ -27,7 +27,7 @@ class EachSensorLastActivationFeature(Feature):
             previous_sensor_time = self.main_time_tracker[current_sensor_name]
 
             dt = current_sensor_time - previous_sensor_time
-            result[index] = round(((dt.seconds * 1e6) + dt.microseconds) / 60 / 1e6, 2)
+            result[index] = dt.seconds / 60
             self.main_time_tracker[current_sensor_name] = current_sensor_time
 
         return result
@@ -37,7 +37,6 @@ class EachSensorLastActivationFeature(Feature):
             if event.sensor.name == sensor:
                 return datetime.strptime(event.date + ' ' + event.time, self.TIME_FORMAT)
 
-        # return self.main_time_tracker[sensor]
         return datetime.strptime(window.events[-1].date + ' ' + window.events[-1].time, self.TIME_FORMAT)
 
     def initialize_main_time_tracker(self):
