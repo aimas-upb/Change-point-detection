@@ -9,7 +9,7 @@ import seaborn as sns
 from sklearn.gaussian_process.kernels import RBF
 from densratio import densratio
 
-import ntpath
+import os
 import pickle
 
 from Window import Window
@@ -143,7 +143,7 @@ def save_sep_data(file_name: str, SEP):
         f.write("\n\n")
         f.write("Num non-zero SEPs: %i" % sum(sep_df["sep"] > 0))
         f.write("\n\n")
-        f.write("non-zero SEPs: %s" % str(sep_df[[sep_df["sep"] > 0], :]))
+        f.write("non-zero SEPs: %s" % str(sep_df.loc[sep_df["sep"] > 0]))
         
     plot_file = file_name + "_plot.svg"
     fig = plt.figure()
@@ -182,12 +182,12 @@ if __name__ == "__main__":
     feature_windows = []
     oneHotEncoder = Encoder()
     
-    source_file_name = ntpath.splitext(ntpath.basename(DATA_SET))[0]
-    dest_folder = "src" + ntpath.sep + "results" + ntpath.sep
+    source_file_name = os.path.splitext(os.path.basename(DATA_SET))[0]
+    dest_folder = "src" + os.path.sep + "results" + os.path.sep
     dest_file = dest_folder + source_file_name + ".pkl"
     
-    if ntpath.exists(dest_file):
-        pickle.load(feature_windows, open(dest_file, "rb"))
+    if os.path.exists(dest_file):
+        feature_windows = pickle.load(open(dest_file, "rb"))
     else:
         for i in range(0, len(all_events) - WINDOW_LENGTH + 1):
             # print(i)
@@ -200,14 +200,13 @@ if __name__ == "__main__":
         pickle.dump(feature_windows, open(dest_file, "wb"))
         
     # run RuLSIF experiments for different regularization and kernel param
-    kernel_param = [1e-2, 1e-1, 1, 1e1, 1e2]
-    regularization_param = [0.1, 0.25, 0.5, 0.75, 0.9]
+    kernel_param = [1, 5, 10, 20]
+    regularization_param = [0.5, 0.75, 0.9]
     
     for sigma in kernel_param:
         for lamda in regularization_param:
             
             res_file_name = dest_folder + source_file_name + "_res_%3.2f_%3.2f" % (sigma, lamda)
-    
     
             SEP = []
             # kernel = 1.0 * RBF(KERNEL_PARAM)
@@ -255,9 +254,9 @@ if __name__ == "__main__":
                 sep = max(0, 0.5 - g_sum)
         
                 sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
-                SEP.append((round(sep, 2), sensor_index))
+                SEP.append((round(sep, 4), sensor_index))
                 
-                save_sep_data(res_file_name, SEP)
+            save_sep_data(res_file_name, SEP)
                 
                 
     # with open('pickles/HH103/time-normalized/HH103-w' + str(WINDOW_LENGTH) + '-n' + str(N) + '-k' + str(KERNEL_PARAM) + '-l' + str(

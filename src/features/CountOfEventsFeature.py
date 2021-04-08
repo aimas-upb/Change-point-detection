@@ -14,6 +14,6 @@ class CountOfEventsFeature(Feature):
         sensors_names_from_window = [event.sensor.name for event in window.events]
 
         for sensor_name in all_sensor_names:
-            result.append(sensors_names_from_window.count(sensor_name))
+            result.append(sensors_names_from_window.count(sensor_name) / len(window.events))
 
         return result
