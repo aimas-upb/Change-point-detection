@@ -1,16 +1,13 @@
+import os
+import pickle
 import timeit
 from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy.optimize as optimize
 import seaborn as sns
-from sklearn.gaussian_process.kernels import RBF
 from densratio import densratio
-
-import os
-import pickle
 
 from Window import Window
 from src.features.CountOfEventsFeature import CountOfEventsFeature
@@ -150,6 +147,9 @@ def save_sep_data(file_name: str, SEP):
     res_boxplot = sep_df.boxplot(column=["sep"])
     plt.savefig(plot_file, format="svg")
 
+    pkl_file = file_name + ".pkl"
+    pickle.dump(SEP, open(pkl_file, "wb"))
+
 
 if __name__ == "__main__":
     start = timeit.default_timer()
@@ -190,13 +190,13 @@ if __name__ == "__main__":
         feature_windows = pickle.load(open(dest_file, "rb"))
     else:
         for i in range(0, len(all_events) - WINDOW_LENGTH + 1):
-            # print(i)
+            print(i)
             # get current 30 events window
             window = Window(all_events[i:WINDOW_LENGTH + i])
             # get array of features from window
             feature_window = feature_extractor.extract_features_from_window(window)
             feature_windows.append(feature_window)
-            
+
         pickle.dump(feature_windows, open(dest_file, "wb"))
         
     # run RuLSIF experiments for different regularization and kernel param
@@ -209,40 +209,14 @@ if __name__ == "__main__":
             res_file_name = dest_folder + source_file_name + "_res_%3.2f_%3.2f" % (sigma, lamda)
     
             SEP = []
-            # kernel = 1.0 * RBF(KERNEL_PARAM)
-        
+
             for index in range(N, len(feature_windows) + 1 - N):
-                # print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
+                print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
                 previous_x = feature_windows[index - N:index]
                 assert len(previous_x) == N
         
                 current_x = feature_windows[index:N + index]
                 assert len(current_x) == N
-        
-                # A = build_A(N, current_x, previous_x)
-                #
-                # # h = compute_H(N, current_x, previous_x)
-                # h = compute_H2(A)
-                #
-                # assert len(h) == N
-        
-                # optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
-                #                                  # constraints=[optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf),
-                #                                  #              optimize.LinearConstraint(A, np.zeros((N,)), np.inf * np.ones((N,)))],
-                #                                  constraints=({'type': 'ineq', 'fun': lambda x:  sum(abs(x) - 0.1)},
-                #                                               {'type': 'ineq', 'fun': lambda x:  A.dot(x)}),
-                #                                  method='cobyla',
-                #                                  options={'ftol': 1e-15})
-                #
-                # # optimization = optimize.minimize(functie(h, REGULARIZATION_PARAM), np.ones((len(h),)),
-                # #                                  constraints=(optimize.NonlinearConstraint(lambda x: sum(abs(x) - 1e-1), 0, np.inf)))
-                # theta = optimization.x
-                # assert len(theta) == N
-        
-                # g = compute_G(N, current_x, previous_x, theta)
-        
-                # sep = compute_SEP(N, g)
-                # SEP.append((round(sep, 2), sensor_index))
         
                 # use previous_x as the Y samples for distribution of f_(t-1)(x) and
                 # use current_x as the X samples for distribution f_t(x) in a call to densratio RuLSIF -
@@ -257,14 +231,3 @@ if __name__ == "__main__":
                 SEP.append((round(sep, 4), sensor_index))
                 
             save_sep_data(res_file_name, SEP)
-                
-                
-    # with open('pickles/HH103/time-normalized/HH103-w' + str(WINDOW_LENGTH) + '-n' + str(N) + '-k' + str(KERNEL_PARAM) + '-l' + str(
-    #         REGULARIZATION_PARAM) + 'asdasdasdas.pkl', 'wb') as file:
-    #     pickle.dump(SEP, file)
-
-    # print(SEP)
-    # display_sep_distribution()
-
-    # stop = timeit.default_timer()
-    # print('Time: ', stop - start)
