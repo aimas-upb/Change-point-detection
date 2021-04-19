@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from Window import Window
 from src.features.base.Feature import Feature
+from src.models.Window import Window
 from src.utils.WindowEventsParser import WindowEventsParser
 
 

@@ -2,8 +2,8 @@ import codecs
 
 import numpy as np
 
-from Event import Event
-from Sensor import Sensor
+from src.models.Event import Event
+from src.models.Sensor import Sensor
 
 
 class WindowEventsParser:
@@ -37,7 +37,7 @@ class WindowEventsParser:
                 if elements[2] not in self.sensor_locations:
                     self.sensor_locations.append(np.array([elements[2]]))
 
-            self.events.append(Event(date, time, sensor))
+            self.events.append(Event(date, time, sensor, index + 1, label))
 
             labels.append((index + 1, label))
 

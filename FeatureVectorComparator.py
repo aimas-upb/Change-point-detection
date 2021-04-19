@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 
-from Window import Window
 from src.features.CountOfEventsFeature import CountOfEventsFeature
 from src.features.DayOfWeekFeature import DayOfWeekFeature
 from src.features.DominantLocationFeature import DominantLocationFeature
@@ -15,6 +14,7 @@ from src.features.SecondsPastMidNightFeature import SecondsPastMidNightFeature
 from src.features.TimeBetweenEventsFeature import TimeBetweenEventsFeature
 from src.features.WindowDurationFeature import WindowDurationFeature
 from src.features.extractor.FeatureExtractor import FeatureExtractor
+from src.models.Window import Window
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser
 
@@ -80,19 +80,18 @@ if __name__ == "__main__":
     last_window = Window(all_events[EVENT_INDEX - WINDOW_LENGTH - 1:EVENT_INDEX - 1])
     last_feature_window = feature_extractor.extract_features_from_window(last_window)
     print('------ LAST FEATURE WINDOW -------')
-    # print(last_feature_window)
+    print(last_feature_window)
     print('Length: ' + str(len(last_feature_window)) + '\n')
 
     current_window = Window(all_events[EVENT_INDEX - WINDOW_LENGTH:EVENT_INDEX])
     current_feature_window = feature_extractor.extract_features_from_window(current_window)
     print('------ CURRENT FEATURE WINDOW -------')
-    # print(current_feature_window)
+    print(current_feature_window)
     print('Length: ' + str(len(current_feature_window)) + '\n')
 
     next_window = Window(all_events[EVENT_INDEX - WINDOW_LENGTH + 1:EVENT_INDEX + 1])
     next_feature_window = feature_extractor.extract_features_from_window(next_window)
     print('------ NEXT FEATURE WINDOW -------')
-    # print(next_feature_window)
+    print(next_feature_window)
     print('Length: ' + str(len(next_feature_window)))
 
-    
