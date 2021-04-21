@@ -12,5 +12,5 @@ class WindowDurationFeature(Feature):
         first_event = window.events[0]
         last_event = window.events[-1]
 
-        return Feature.get_event_ts_diff(last_event, first_event)
+        return Feature.get_event_ts_diff(last_event, first_event, metric=Feature.MIN)
 
