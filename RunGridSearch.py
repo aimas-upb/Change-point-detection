@@ -180,14 +180,17 @@ if __name__ == "__main__":
     oneHotEncoder = Encoder()
 
     source_file_name = os.path.splitext(os.path.basename(DATA_SET))[0]
-    dest_folder = "src" + os.path.sep + "results" + os.path.sep
+    dest_folder = "src" + os.path.sep + "results" + os.path.sep + "N_%i_wlen_%i" % (N, WINDOW_LENGTH) + os.path.sep
+    
+    if not os.path.exists(dest_folder):
+        os.makedirs(dest_folder)
+    
     dest_file = dest_folder + source_file_name + ".pkl"
 
     if os.path.exists(dest_file):
         feature_windows = pickle.load(open(dest_file, "rb"))
     else:
         for i in range(0, len(all_events) - WINDOW_LENGTH + 1):
-            print(i)
             # get current 30 events window
             window = Window(all_events[i:WINDOW_LENGTH + i])
             # get array of features from window
@@ -197,6 +200,9 @@ if __name__ == "__main__":
         pickle.dump(feature_windows, open(dest_file, "wb"))
     
     grid_search_folder = dest_folder + "grid_search" + os.path.sep
+    if not os.path.exists(grid_search_folder):
+        os.makedirs(grid_search_folder)
+
     kernel_param_grid = [0.05, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 12.5, 15, 20]
     regularization_param = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     # kernel_param_grid = [1, 5]
@@ -214,9 +220,9 @@ if __name__ == "__main__":
             SEP = []
             SEP_assignments = []
 
-            for index in range(WINDOW_LENGTH, len(feature_windows) + 1 - N):
+            for index in range(N, len(feature_windows) + 1 - N):
                 # print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
-                previous_x = feature_windows[index - WINDOW_LENGTH : index - WINDOW_LENGTH + N]
+                previous_x = feature_windows[index - N: index]
                 assert len(previous_x) == N
 
                 current_x = feature_windows[index: N + index]
@@ -231,8 +237,9 @@ if __name__ == "__main__":
                 g_sum = np.sum(densratio_res.compute_density_ratio(np.array(current_x))) / len(current_x)
                 sep = max(0, 0.5 - g_sum)
 
-                sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
-
+                # sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
+                sensor_index = index - 1 + WINDOW_LENGTH
+                
                 add_sep_assignment(sensor_index, sep, all_events, SEP_assignments, feature_extractor, WINDOW_LENGTH)
 
                 SEP.append((round(sep, 4), sensor_index))
@@ -240,7 +247,6 @@ if __name__ == "__main__":
             save_sep_data(res_file_name, SEP, SEP_assignments)
             
             # filter SEP data and produce DataFrame with performance metrics
-            
             for match_interval in range(MAX_CP_MATCH_INTERVAL):
                 for sep_threshold in np.arange(0.02, MAX_SEP_THRESHOLD, 0.02):
             # for match_interval in [1, 2]:
@@ -259,7 +265,6 @@ if __name__ == "__main__":
                         "match_interval": match_interval
                     }
                     all_stats_dict.update(stats_dict)
-                    print(all_stats_dict)
                     all_stats.append(all_stats_dict)
                     
     all_stats_df = pd.DataFrame(all_stats)
