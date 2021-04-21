@@ -27,4 +27,5 @@ class FeatureExtractor:
                 result.extend(feature_result)
             else:
                 result.append(feature_result)
-        return result
+                
+        return np.array(result, dtype=np.float64)
