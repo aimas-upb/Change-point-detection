@@ -13,3 +13,4 @@ class DayOfWeekFeature(Feature):
     # TODO may not be taken into consideration for SEP points
     def get_result(self, window):
         return datetime.datetime.strptime(window.events[-1].date, DATE_FORMAT).weekday() / 7
+    

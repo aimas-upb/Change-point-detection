@@ -19,7 +19,7 @@ class EachSensorLastActivationFeature(Feature):
         parser = WindowEventsParser()
         all_sensor_names = parser.sensor_names
 
-        result = [None] * len(all_sensor_names)
+        result = [0] * len(all_sensor_names)
 
         for index in range(0, len(all_sensor_names)):
             current_sensor_name = all_sensor_names[index][0]
@@ -28,14 +28,14 @@ class EachSensorLastActivationFeature(Feature):
             previous_sensor_time = self.main_time_tracker[current_sensor_name]
             
             if current_sensor_time:
-                dt = current_sensor_time - previous_sensor_time
-                result[index] = np.float64(int(dt.seconds) / 60)
+                diff = Feature.get_datetime_diff(current_sensor_time, previous_sensor_time, metric=Feature.MIN)
+                result[index] = diff
                 self.main_time_tracker[current_sensor_name] = current_sensor_time
             else:
                 current_sensor_time = datetime.strptime(window.events[-1].date + ' ' + window.events[-1].time,
                                                         self.TIME_FORMAT)
-                dt = current_sensor_time - previous_sensor_time
-                result[index] = np.float64(int(dt.seconds) / 60)
+                diff = Feature.get_datetime_diff(current_sensor_time, previous_sensor_time, metric=Feature.MIN)
+                result[index] = diff
             
         return result
 
