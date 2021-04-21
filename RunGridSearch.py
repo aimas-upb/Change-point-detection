@@ -74,7 +74,7 @@ def is_sep_in_range(current_index, SEP_indexes, match_interval):
             else:
                 return False
     
-    if SEP_indexes[-1] >= current_index - match_interval:
+    if SEP_indexes and SEP_indexes[-1] >= current_index - match_interval:
         return True
     
     return False
@@ -132,7 +132,9 @@ def compute_statistics(SEP, all_events, match_interval, exclude_other):
     if TP + FP + TN + FN != 0:
         accuracy = (TP + TN) / (TP + FP + TN + FN)
         
-    f1 = 2 * precision * recall / (precision + recall)
+    f1 = 0
+    if precision + recall != 0:
+        f1 = 2 * precision * recall / (precision + recall)
     
     return {
         "tp": TP,
@@ -195,10 +197,10 @@ if __name__ == "__main__":
         pickle.dump(feature_windows, open(dest_file, "wb"))
     
     grid_search_folder = dest_folder + "grid_search" + os.path.sep
-    # kernel_param_grid = [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 7.5, 10, 15, 20]
-    # regularization_param = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    kernel_param_grid = [1, 5]
-    regularization_param = [1.0]
+    kernel_param_grid = [0.05, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 12.5, 15, 20]
+    regularization_param = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    # kernel_param_grid = [1, 5]
+    # regularization_param = [1.0]
 
     all_stats = []
     
@@ -231,7 +233,7 @@ if __name__ == "__main__":
 
                 sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
 
-                add_sep_assignment(sensor_index, sep, all_events, SEP_assignments)
+                add_sep_assignment(sensor_index, sep, all_events, SEP_assignments, feature_extractor, WINDOW_LENGTH)
 
                 SEP.append((round(sep, 4), sensor_index))
 
@@ -239,10 +241,10 @@ if __name__ == "__main__":
             
             # filter SEP data and produce DataFrame with performance metrics
             
-            # for match_interval in range(MAX_CP_MATCH_INTERVAL):
-            #     for sep_threshold in np.arange(0.02, MAX_SEP_THRESHOLD, 0.02):
-            for match_interval in [1, 2]:
-                for sep_threshold in [0.1, 0.2]:
+            for match_interval in range(MAX_CP_MATCH_INTERVAL):
+                for sep_threshold in np.arange(0.02, MAX_SEP_THRESHOLD, 0.02):
+            # for match_interval in [1, 2]:
+            #     for sep_threshold in [0.05, 0.1]:
 
                     filtered_SEP = apply_threshold(SEP, sep_threshold)
                     filtered_SEP = remove_consecutive_SEP_points(filtered_SEP)
@@ -255,15 +257,14 @@ if __name__ == "__main__":
                         "lambda": lamda,
                         "sep_threshold": sep_threshold,
                         "match_interval": match_interval
-                    }.update(stats_dict)
+                    }
+                    all_stats_dict.update(stats_dict)
+                    print(all_stats_dict)
                     all_stats.append(all_stats_dict)
                     
     all_stats_df = pd.DataFrame(all_stats)
     all_stats_df = all_stats_df.sort_values(by=["f1", "recall", "precision"], ascending=False)
-    all_stats_file = dest_folder + "all_stats" + ".xlxs"
-    
-    with pd.ExcelWriter(all_stats_file) as writer:
-        all_stats_df.to_excel(writer, sheet_name="all_stats")
+    all_stats_file = grid_search_folder + source_file_name + "_all_stats" + ".xlsx"
 
     max_precision_idx = all_stats_df["precision"].idxmax()
     max_recall_idx = all_stats_df["recall"].idxmax()
@@ -275,7 +276,7 @@ if __name__ == "__main__":
     max_df = max_df.append(all_stats_df.iloc[max_recall_idx])
     max_df = max_df.append(all_stats_df.iloc[max_f1_idx])
     max_df = max_df.append(all_stats_df.iloc[max_accuracy_idx])
-    
+
     with pd.ExcelWriter(all_stats_file) as writer:
+        all_stats_df.to_excel(writer, sheet_name="all_stats")
         max_df.to_excel(writer, sheet_name="max_stats")
-    

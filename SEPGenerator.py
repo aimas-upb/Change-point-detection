@@ -88,8 +88,8 @@ def save_sep_data(file_name: str, SEP, SEP_assignments):
 
 
 def add_statistics_to_dataset(sensor_index):
-    current_window = Window(all_events[sensor_index - 1 - WINDOW_LENGTH:sensor_index - 1])
-    previous_window = Window(all_events[sensor_index - 2 - WINDOW_LENGTH:sensor_index - 2])
+    current_window = Window(all_events[sensor_index - 1 - window_length:sensor_index - 1])
+    previous_window = Window(all_events[sensor_index - 2 - window_length:sensor_index - 2])
 
     current_feature_window = feature_extractor.extract_features_from_window(current_window)
     previous_feature_window = feature_extractor.extract_features_from_window(previous_window)
@@ -115,9 +115,9 @@ def add_statistics_to_dataset(sensor_index):
         [curr - prev for curr, prev in zip(current_feature_window, previous_feature_window)]))
 
 
-def add_sep_assignment(sensor_index, sep, all_events, sep_assignments):
-    current_window = Window(all_events[sensor_index - 1 - WINDOW_LENGTH:sensor_index - 1])
-    previous_window = Window(all_events[sensor_index - 2 - WINDOW_LENGTH:sensor_index - 2])
+def add_sep_assignment(sensor_index, sep, all_events, sep_assignments, feature_extractor, window_length):
+    current_window = Window(all_events[sensor_index - 1 - window_length: sensor_index - 1])
+    previous_window = Window(all_events[sensor_index - 2 - window_length: sensor_index - 2])
     
     current_feature_window = feature_extractor.extract_features_from_window(current_window)
     previous_feature_window = feature_extractor.extract_features_from_window(previous_window)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     # arguments matcher
     arg = arg_parser.parse_args()
     DATA_SET = arg.file
-    WINDOW_LENGTH = arg.window_length
+    window_length = arg.window_length
     N = arg.N
 
     # data parser
@@ -177,10 +177,10 @@ if __name__ == "__main__":
     if os.path.exists(dest_file):
         feature_windows = pickle.load(open(dest_file, "rb"))
     else:
-        for i in range(0, len(all_events) - WINDOW_LENGTH + 1):
+        for i in range(0, len(all_events) - window_length + 1):
             print(i)
             # get current 30 events window
-            window = Window(all_events[i:WINDOW_LENGTH + i])
+            window = Window(all_events[i:window_length + i])
             # get array of features from window
             feature_window = feature_extractor.extract_features_from_window(window)
             feature_windows.append(feature_window)
@@ -217,7 +217,7 @@ if __name__ == "__main__":
                 g_sum = np.sum(densratio_res.compute_density_ratio(np.array(current_x))) / len(current_x)
                 sep = max(0, 0.5 - g_sum)
 
-                sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
+                sensor_index = feature_windows.index(previous_x[N - 1]) + window_length
 
                 add_statistics_to_dataset(sensor_index)
 
