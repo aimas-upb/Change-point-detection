@@ -41,9 +41,9 @@ def build_features():
     absolute_time_between_events_feature = TimeBetweenEventsFeature('absolute')
     proportional_time_between_events_feature = TimeBetweenEventsFeature('proportional')
 
-    day_of_week_feature = DayOfWeekFeature()
-    hour_of_day_feature = HourOfDayFeature()
-    seconds_past_mid_night_feature = SecondsPastMidNightFeature()
+    # day_of_week_feature = DayOfWeekFeature()
+    # hour_of_day_feature = HourOfDayFeature()
+    # seconds_past_mid_night_feature = SecondsPastMidNightFeature()
     each_sensor_last_activation_time_feature = EachSensorLastActivationFeature()
 
     return [window_duration_feature,
@@ -56,84 +56,13 @@ def build_features():
             absolute_time_between_events_feature,
             proportional_time_between_events_feature,
             entropy_feature,
-            seconds_past_mid_night_feature,
+            # seconds_past_mid_night_feature,
             each_sensor_last_activation_time_feature]
 
-    # return [each_sensor_last_activation_time_feature]
 
-
-def compute_H(N, current_x, previous_x):
-    H = []
-
-    for i in range(0, N):
-        h = np.zeros((1, 1))
-        for j in range(0, N):
-            kernel_val = kernel.__call__(np.array(current_x[j]).reshape(1, len(current_x[j])),
-                                         np.array(previous_x[i]).reshape(1, len(previous_x[i])))
-
-            h = h + kernel_val
-        H.append(h[0][0] / N)
-
-    return H
-
-
-def compute_H2(A):
-    return A.sum(axis=1) / N
-
-
-def build_A(N, current_x, previous_x):
-    A = []
-
-    for i in range(0, N):
-        a = []
-        for j in range(0, N):
-            kernel_value = kernel.__call__(np.array(current_x[j]).reshape(1, len(current_x[j])),
-                                           np.array(previous_x[i]).reshape(1, len(previous_x[i])))
-            a.append(kernel_value[0][0])
-        A.append(a)
-
-    result = np.array(A)
-
-    assert (N, N) == result.shape
-    return result
-
-
-def functie(h, lamda):
-    h = np.array(h).reshape((len(h), 1))
-    print(h.shape)
-    # return lambda theta: theta.T @ (h * h @ theta + lamda * theta @ theta
-    return lambda theta: theta.T @ (h @ h.T) @ theta + lamda * theta.T @ theta
-
-
-def compute_G(N, current_x, previous_x, theta):
-    G = []
-
-    for i in range(0, N):
-        g = np.zeros((1, 2))
-        for j in range(0, N):
-            g = g + theta[i] * kernel.__call__(np.array(previous_x[i]).reshape(1, len(previous_x[i])),
-                                               np.array(current_x[j]).reshape(1, len(current_x[j])))
-
-        G.append(g[0][0])
-
-    return G
-
-
-def compute_SEP(N, G):
-    return max(0, 0.5 - (np.sum(G)) / N)
-
-
-def display_sep_distribution():
-    sep_values = [tup[0] for tup in SEP]
-    s = pd.Series(sep_values)
-    print(s.describe())
-    sns.boxplot(data=sep_values)
-    plt.show()
-
-
-def save_sep_data(file_name: str, SEP):
+def save_sep_data(file_name: str, SEP, SEP_assignments):
     sep_df = pd.DataFrame(SEP, columns=["sep", "sensor_index"])
-
+    
     summary_file = file_name + "_summary.txt"
     with open(summary_file, "w+") as f:
         f.write(str(sep_df["sep"].describe()))
@@ -149,6 +78,13 @@ def save_sep_data(file_name: str, SEP):
 
     pkl_file = file_name + ".pkl"
     pickle.dump(SEP, open(pkl_file, "wb"))
+    
+    if SEP_assignments:
+        sep_assignment_file = file_name + "_sep_assign.txt"
+        with open(sep_assignment_file, "w+") as f:
+            for text in SEP_assignments:
+                f.write(text)
+                f.write("\n")
 
 
 def add_statistics_to_dataset(sensor_index):
@@ -165,8 +101,9 @@ def add_statistics_to_dataset(sensor_index):
                     str(current_event.time) + " " + \
                     str(current_event.sensor.name) + " " + \
                     str(current_event.sensor.state) + " " + \
-                    str(current_event.sensor.location)
-
+                    str(current_event.sensor.location) + " " + \
+                    str(current_event.label)
+ 
     spaces = ''
 
     for i in range(0, 55 - len(event_details)):
@@ -176,6 +113,34 @@ def add_statistics_to_dataset(sensor_index):
           " -> SEP: " + str((round(sep, 4))) + " " +
           " -> FEATURE WINDOW: " + str(
         [curr - prev for curr, prev in zip(current_feature_window, previous_feature_window)]))
+
+
+def add_sep_assignment(sensor_index, sep, all_events, sep_assignments):
+    current_window = Window(all_events[sensor_index - 1 - WINDOW_LENGTH:sensor_index - 1])
+    previous_window = Window(all_events[sensor_index - 2 - WINDOW_LENGTH:sensor_index - 2])
+    
+    current_feature_window = feature_extractor.extract_features_from_window(current_window)
+    previous_feature_window = feature_extractor.extract_features_from_window(previous_window)
+    
+    current_event = all_events[sensor_index - 1]
+
+    event_details = str(current_event.index) + " " + \
+                    str(current_event.date) + " " + \
+                    str(current_event.time) + " " + \
+                    str(current_event.sensor.name) + " " + \
+                    str(current_event.sensor.state) + " " + \
+                    str(current_event.sensor.location) + " " + \
+                    str(current_event.label)
+
+    spaces = ''
+    for i in range(0, 55 - len(event_details)):
+        spaces = spaces + ' '
+    
+    event_details += spaces
+    event_details += " -> SEP: " + str((round(sep, 4)))
+    event_details += " -> FEATURE WINDOW: " + str(list(current_feature_window - previous_feature_window))
+    
+    sep_assignments.append(event_details)
 
 
 if __name__ == "__main__":
@@ -223,12 +188,12 @@ if __name__ == "__main__":
         pickle.dump(feature_windows, open(dest_file, "wb"))
 
     # run RuLSIF experiments for different regularization and kernel param
-    # kernel_param = [1, 5, 10, 20]
+    # kernel_param_grid = [1, 5, 10, 20]
     # regularization_param = [0.5, 0.75, 0.9]
-    kernel_param = [10]
-    regularization_param = [0.75]
+    kernel_param_grid = [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 7.5, 10, 15, 20]
+    regularization_param = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
-    for sigma in kernel_param:
+    for sigma in kernel_param_grid:
         for lamda in regularization_param:
 
             res_file_name = dest_folder + source_file_name + "_res_%3.2f_%3.2f" % (sigma, lamda)
