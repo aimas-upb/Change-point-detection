@@ -1,5 +1,3 @@
-import datetime
-
 from src.features.WindowDurationFeature import WindowDurationFeature
 from src.features.base.Feature import Feature
 
@@ -8,7 +6,7 @@ class TimeBetweenEventsFeature(Feature):
     mode = ''
 
     def __init__(self, mode):
-        self.name = 'Time between events proportional'
+        self.name = 'Time between events ' + mode
         self.mode = mode
 
     def get_result(self, window):

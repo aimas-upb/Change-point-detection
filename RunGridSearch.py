@@ -1,17 +1,18 @@
-from SEPGenerator import build_features, save_sep_data, add_sep_assignment
+import os
+import pickle
+from argparse import ArgumentParser
+
+import numpy as np
+import pandas as pd
+import yaml
+from densratio import densratio
+
+from CPDStatisticsGenerator import apply_threshold, remove_consecutive_SEP_points
+from SEPGenerator import build_features_from_config, save_sep_data, add_sep_assignment
+from src.features.extractor.FeatureExtractor import FeatureExtractor
 from src.models.Window import Window
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser
-from src.features.extractor.FeatureExtractor import FeatureExtractor
-from CPDStatisticsGenerator import apply_threshold, remove_consecutive_SEP_points
-
-from argparse import ArgumentParser
-from densratio import densratio
-
-import os
-import pickle
-import numpy as np
-import pandas as pd
 
 OTHER_ACTIVITY = "Other_Activity"
 
@@ -22,11 +23,11 @@ def get_sep_index_neighbours(sep_index_in_file, all_index_labels, match_interval
     for index in range(-match_interval, 0):
         if sep_index_in_file + index >= 0:
             sep_index_neighbours.append(all_index_labels[sep_index_in_file + index])
-    
+
     for index in range(match_interval + 1):
         if sep_index_in_file + index < len(all_index_labels):
             sep_index_neighbours.append(all_index_labels[sep_index_in_file + index])
-        
+
     # sep_index_neighbours.sort(key=lambda x: x[0])
     # print('SEP: ' + str(sep_index_in_file + 1) + ' -> sep_index_neighbours: ' + str(sep_index_neighbours))
     return sep_index_neighbours
@@ -69,29 +70,29 @@ def is_sep_in_range(current_index, SEP_indexes, match_interval):
         if sep_idx >= current_index:
             if sep_idx <= current_index + match_interval:
                 return True
-            elif i > 0 and SEP_indexes[i-1] >= current_index - match_interval:
+            elif i > 0 and SEP_indexes[i - 1] >= current_index - match_interval:
                 return True
             else:
                 return False
-    
+
     if SEP_indexes and SEP_indexes[-1] >= current_index - match_interval:
         return True
-    
+
     return False
 
 
 def compute_negatives(SEP_indexes, all_index_labels, match_interval, exclude_other):
     FN = 0
     TN = 0
-    
+
     for index in range(1, len(all_index_labels)):
         current_index = all_index_labels[index][0]
         current_label = all_index_labels[index][1]
 
         previous_label = all_index_labels[index - 1][1]
-        
+
         sep_in_range = is_sep_in_range(current_index, SEP_indexes, match_interval)
-        
+
         if not sep_in_range:
             if exclude_other:
                 if current_label != OTHER_ACTIVITY and previous_label != OTHER_ACTIVITY and current_label != previous_label:
@@ -119,23 +120,23 @@ def count_statistics(SEP, all_index_labels, match_interval, exclude_other):
 def compute_statistics(SEP, all_events, match_interval, exclude_other):
     all_index_labels = [(ev.index, ev.label) for ev in all_events]
     FN, FP, TN, TP = count_statistics(SEP, all_index_labels, match_interval, exclude_other)
-    
+
     precision = 0
     if TP + FP != 0:
         precision = TP / (TP + FP)
-    
+
     recall = 0
     if TP + FN != 0:
         recall = TP / (TP + FN)
-        
+
     accuracy = 0
     if TP + FP + TN + FN != 0:
         accuracy = (TP + TN) / (TP + FP + TN + FN)
-        
+
     f1 = 0
     if precision + recall != 0:
         f1 = 2 * precision * recall / (precision + recall)
-    
+
     return {
         "tp": TP,
         "fp": FP,
@@ -148,24 +149,29 @@ def compute_statistics(SEP, all_events, match_interval, exclude_other):
     }
 
 
+def load_configurations(config_file_path: str):
+    with open(config_file_path) as config_file:
+        return yaml.load(config_file)
+
+
 if __name__ == "__main__":
     arg_parser = ArgumentParser(description='.')
-    arg_parser.add_argument('--file', type=str, required=True)
-    arg_parser.add_argument('--window_length', type=int, required=True)
-    arg_parser.add_argument('--N', type=int, required=True)
-    arg_parser.add_argument('--exclude_other', type=bool, required=True, default=False)
-
-    # arguments matcher
+    arg_parser.add_argument('--config', type=str, required=True)
     arg = arg_parser.parse_args()
-    DATA_SET = arg.file
-    WINDOW_LENGTH = arg.window_length
-    N = arg.N
-    EXCLUDE_OTHER_ACTIVITY = arg.exclude_other
-    
-    # Ranges
-    MAX_SEP_THRESHOLD = 0.5
-    MAX_CP_MATCH_INTERVAL = 10
-    
+
+    CONFIGURATIONS = load_configurations(arg.config)
+
+    N = CONFIGURATIONS['N']
+    FEATURES = CONFIGURATIONS['features']
+    DATA_SET = CONFIGURATIONS['source-file']
+    WINDOW_LENGTH = CONFIGURATIONS['window-length']
+    THRESHOLD_STEP = CONFIGURATIONS['threshold']['step']
+    MAX_SEP_THRESHOLD = CONFIGURATIONS['threshold']['max']
+    KERNEL_PARAM_GRID = CONFIGURATIONS['kernel-param-grid']
+    EXCLUDE_OTHER_ACTIVITY = CONFIGURATIONS['exclude-other']
+    MAX_CP_MATCH_INTERVAL = CONFIGURATIONS['max-cp-match-interval']
+    REGULARIZATION_PARAM_GRID = CONFIGURATIONS['regularization-param-grid']
+
     # data parser
     parser = WindowEventsParser()
     parser.read_data_from_file(DATA_SET)
@@ -173,7 +179,7 @@ if __name__ == "__main__":
 
     # features
     # defines the list of features that will be extracted from each window
-    features = build_features()
+    features = build_features_from_config(FEATURES)
     feature_extractor = FeatureExtractor(features)
 
     feature_windows = []
@@ -181,10 +187,10 @@ if __name__ == "__main__":
 
     source_file_name = os.path.splitext(os.path.basename(DATA_SET))[0]
     dest_folder = "src" + os.path.sep + "results" + os.path.sep + "N_%i_wlen_%i" % (N, WINDOW_LENGTH) + os.path.sep
-    
+
     if not os.path.exists(dest_folder):
         os.makedirs(dest_folder)
-    
+
     dest_file = dest_folder + source_file_name + ".pkl"
 
     if os.path.exists(dest_file):
@@ -198,30 +204,25 @@ if __name__ == "__main__":
             feature_windows.append(feature_window)
 
         pickle.dump(feature_windows, open(dest_file, "wb"))
-    
+
     grid_search_folder = dest_folder + "grid_search" + os.path.sep
     if not os.path.exists(grid_search_folder):
         os.makedirs(grid_search_folder)
 
-    kernel_param_grid = [0.05, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 12.5, 15, 20]
-    regularization_param = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    # kernel_param_grid = [1, 5]
-    # regularization_param = [1.0]
-
     all_stats = []
-    
-    for sigma in kernel_param_grid:
-        for lamda in regularization_param:
-            
+
+    for sigma in KERNEL_PARAM_GRID:
+        for lamda in REGULARIZATION_PARAM_GRID:
+
             print("[INFO] Computing stats for sigma: %5.2f, lambda: %5.2f ..." % (sigma, lamda))
-            
+
             res_file_name = grid_search_folder + source_file_name + "_res_%3.2f_%3.2f" % (sigma, lamda)
 
             SEP = []
             SEP_assignments = []
 
             for index in range(N, len(feature_windows) + 1 - N):
-                # print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
+                print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
                 previous_x = feature_windows[index - N: index]
                 assert len(previous_x) == N
 
@@ -239,25 +240,25 @@ if __name__ == "__main__":
 
                 # sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
                 sensor_index = index - 1 + WINDOW_LENGTH
-                
+
                 add_sep_assignment(sensor_index, sep, all_events, SEP_assignments, feature_extractor, WINDOW_LENGTH)
 
                 SEP.append((round(sep, 4), sensor_index))
 
             save_sep_data(res_file_name, SEP, SEP_assignments)
-            
+
             # filter SEP data and produce DataFrame with performance metrics
             for match_interval in range(MAX_CP_MATCH_INTERVAL):
-                for sep_threshold in np.arange(0.02, MAX_SEP_THRESHOLD, 0.02):
-            # for match_interval in [1, 2]:
-            #     for sep_threshold in [0.05, 0.1]:
+                for sep_threshold in np.arange(THRESHOLD_STEP, MAX_SEP_THRESHOLD, THRESHOLD_STEP):
+                    # for match_interval in [1, 2]:
+                    #     for sep_threshold in [0.05, 0.1]:
 
                     filtered_SEP = apply_threshold(SEP, sep_threshold)
                     filtered_SEP = remove_consecutive_SEP_points(filtered_SEP)
-                    
+
                     stats_dict = compute_statistics(filtered_SEP, all_events, match_interval,
                                                     EXCLUDE_OTHER_ACTIVITY)
-                    
+
                     all_stats_dict = {
                         "sigma": sigma,
                         "lambda": lamda,
@@ -266,7 +267,7 @@ if __name__ == "__main__":
                     }
                     all_stats_dict.update(stats_dict)
                     all_stats.append(all_stats_dict)
-                    
+
     all_stats_df = pd.DataFrame(all_stats)
     all_stats_df = all_stats_df.sort_values(by=["f1", "recall", "precision"], ascending=False)
     all_stats_file = grid_search_folder + source_file_name + "_all_stats" + ".xlsx"

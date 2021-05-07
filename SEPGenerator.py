@@ -6,26 +6,41 @@ from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from densratio import densratio
 
 from src.features.CountOfEventsFeature import CountOfEventsFeature
-from src.features.DayOfWeekFeature import DayOfWeekFeature
 from src.features.DominantLocationFeature import DominantLocationFeature
 from src.features.EachSensorLastActivationFeature import EachSensorLastActivationFeature
 from src.features.EntropyFeature import EntropyFeature
-from src.features.HourOfDayFeature import HourOfDayFeature
 from src.features.LastSensorLocation import LastSensorLocationFeature
 from src.features.MostFrequentSensorFeature import MostFrequentSensorFeature
 from src.features.MostRecentSensorFeature import MostRecentSensorFeature
 from src.features.NumberOfTransitionsFeature import NumberOfTransitionsFeature
-from src.features.SecondsPastMidNightFeature import SecondsPastMidNightFeature
 from src.features.TimeBetweenEventsFeature import TimeBetweenEventsFeature
 from src.features.WindowDurationFeature import WindowDurationFeature
 from src.features.extractor.FeatureExtractor import FeatureExtractor
 from src.models.Window import Window
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser
+
+
+def build_features_from_config(FEATURES):
+    features = []
+
+    for feature_class_name in FEATURES:
+        if has_parameter(feature_class_name):
+            feature_class_name = feature_class_name.replace('(\'', ' ').replace('\')', ' ')
+            class_name = feature_class_name.split()[0]
+            class_parameter = feature_class_name.split()[1]
+            features.append(globals()[class_name](class_parameter))
+        else:
+            features.append(globals()[feature_class_name]())
+
+    return features
+
+
+def has_parameter(feature_class_name: str):
+    return '(' in feature_class_name
 
 
 def build_features():
