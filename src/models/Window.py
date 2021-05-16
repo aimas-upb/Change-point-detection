@@ -13,6 +13,16 @@ class Window:
         window_sensors = self.get_sensors()
         return [sensor.location for sensor in window_sensors]
 
+    @staticmethod
+    def count_active_appearances(window, sensor_name):
+        activations = 0
+
+        for event in window.events:
+            if event.sensor.name == sensor_name and event.sensor.state == "ON":
+                activations = activations + 1
+
+        return activations
+
     def to_string(self):
         print("WINDOW: ")
         for event in self.events:

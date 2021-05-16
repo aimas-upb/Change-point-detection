@@ -19,6 +19,12 @@ from src.features.NumberOfTransitionsFeature import NumberOfTransitionsFeature
 from src.features.TimeBetweenEventsFeature import TimeBetweenEventsFeature
 from src.features.WindowDurationFeature import WindowDurationFeature
 from src.features.extractor.FeatureExtractor import FeatureExtractor
+from src.features.state.CountOfONEventsFeature import CountOfONEventsFeature
+from src.features.state.EntropyONFeature import EntropyONFeature
+from src.features.state.MostFrequestONSensorFeature import MostFrequentONSensorFeature
+from src.features.state.MostRecentONSensorFeature import MostRecentONSensorFeature
+from src.features.state.NumberOfONSensorEventsFeature import NumberOfONSensorEventsFeature
+from src.features.state.TimeBetweenONEventsFeature import TimeBetweenONEventsFeature
 from src.models.Window import Window
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser
@@ -46,15 +52,22 @@ def has_parameter(feature_class_name: str):
 def build_features():
     window_duration_feature = WindowDurationFeature()
     most_recent_sensor_feature = MostRecentSensorFeature()
+    most_recent_ON_sensor_feature = MostRecentONSensorFeature()
     most_frequent_sensor_feature = MostFrequentSensorFeature()
+    most_frequent_ON_sensor_feature = MostFrequentONSensorFeature()
     last_sensor_location = LastSensorLocationFeature()
     dominant_location_feature = DominantLocationFeature()
     number_of_transitions_feature = NumberOfTransitionsFeature()
     entropy_feature = EntropyFeature()
+    entropy_ON_feature = EntropyONFeature()
+    number_of_ON_sensor_events_feature = NumberOfONSensorEventsFeature()
 
     count_of_events_feature = CountOfEventsFeature()
+    count_of_ON_events_feature = CountOfONEventsFeature()
     absolute_time_between_events_feature = TimeBetweenEventsFeature('absolute')
+    absolute_time_between_ON_events_feature = TimeBetweenONEventsFeature('absolute')
     proportional_time_between_events_feature = TimeBetweenEventsFeature('proportional')
+    proportional_time_between_ON_events_feature = TimeBetweenONEventsFeature('proportional')
 
     # day_of_week_feature = DayOfWeekFeature()
     # hour_of_day_feature = HourOfDayFeature()

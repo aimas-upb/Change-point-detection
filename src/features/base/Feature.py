@@ -1,12 +1,13 @@
+import time
 from abc import abstractmethod
 from datetime import datetime
-import time
 
 
 class Feature:
     TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
     SEC = "seconds"
     MIN = "minutes"
+    MOTION_SENSOR_PREFIX = "M"
     
     @abstractmethod
     def get_result(self, window):
@@ -35,3 +36,7 @@ class Feature:
         previous_datetime = datetime.strptime(previous_event.date + ' ' + previous_event.time, Feature.TIME_FORMAT)
         
         return Feature.get_datetime_diff(current_datetime, previous_datetime, metric=metric)
+
+    @staticmethod
+    def is_motion_sensor(self, sensor_name: str):
+        return sensor_name[0].startswith(self.MOTION_SENSOR_PREFIX)

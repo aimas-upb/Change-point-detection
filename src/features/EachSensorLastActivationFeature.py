@@ -1,5 +1,4 @@
 from datetime import datetime
-import numpy as np
 
 from src.features.base.Feature import Feature
 from src.models.Window import Window
@@ -44,8 +43,6 @@ class EachSensorLastActivationFeature(Feature):
             if event.sensor.name == sensor:
                 return datetime.strptime(event.date + ' ' + event.time, self.TIME_FORMAT)
 
-        # return self.main_time_tracker[sensor]
-        # return datetime.strptime(window.events[-1].date + ' ' + window.events[-1].time, self.TIME_FORMAT)
         return None
 
     def initialize_main_time_tracker(self):
