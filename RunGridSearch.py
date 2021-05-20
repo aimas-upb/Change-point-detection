@@ -227,7 +227,7 @@ if __name__ == "__main__":
             SEP_assignments = []
 
             for index in range(N + CHANGEPOINT_WINDOW_STEP, len(feature_windows) + 1 - N):
-                print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
+                # print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
                 previous_x = feature_windows[index - N - CHANGEPOINT_WINDOW_STEP: index - CHANGEPOINT_WINDOW_STEP]
                 assert len(previous_x) == N
 
