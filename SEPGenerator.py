@@ -21,10 +21,11 @@ from src.features.WindowDurationFeature import WindowDurationFeature
 from src.features.extractor.FeatureExtractor import FeatureExtractor
 from src.features.state.CountOfONEventsFeature import CountOfONEventsFeature
 from src.features.state.EntropyONFeature import EntropyONFeature
-from src.features.state.MostFrequestONSensorFeature import MostFrequentONSensorFeature
+from src.features.state.MostFrequentONSensorFeature import MostFrequentONSensorFeature
 from src.features.state.MostRecentONSensorFeature import MostRecentONSensorFeature
 from src.features.state.NumberOfONSensorEventsFeature import NumberOfONSensorEventsFeature
 from src.features.state.TimeBetweenONEventsFeature import TimeBetweenONEventsFeature
+from src.features.ProportionSensorChangesFeature import ProportionSensorChangesFeature
 from src.models.Window import Window
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser

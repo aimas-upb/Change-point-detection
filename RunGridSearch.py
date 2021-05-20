@@ -158,15 +158,19 @@ if __name__ == "__main__":
     arg_parser = ArgumentParser(description='.')
     arg_parser.add_argument('--config', type=str, required=True)
     arg = arg_parser.parse_args()
-
+    
+    config_name = os.path.splitext(os.path.basename(arg.config))[0]
+    
     CONFIGURATIONS = load_configurations(arg.config)
 
     N = CONFIGURATIONS['N']
+    CHANGEPOINT_WINDOW_STEP = CONFIGURATIONS['changepoint-window-step']
     FEATURES = CONFIGURATIONS['features']
     DATA_SET = CONFIGURATIONS['source-file']
     WINDOW_LENGTH = CONFIGURATIONS['window-length']
     THRESHOLD_STEP = CONFIGURATIONS['threshold']['step']
     MAX_SEP_THRESHOLD = CONFIGURATIONS['threshold']['max']
+    MIN_SEP_THRESHOLD = CONFIGURATIONS['threshold']['min']
     KERNEL_PARAM_GRID = CONFIGURATIONS['kernel-param-grid']
     EXCLUDE_OTHER_ACTIVITY = CONFIGURATIONS['exclude-other']
     MAX_CP_MATCH_INTERVAL = CONFIGURATIONS['max-cp-match-interval']
@@ -186,7 +190,8 @@ if __name__ == "__main__":
     oneHotEncoder = Encoder()
 
     source_file_name = os.path.splitext(os.path.basename(DATA_SET))[0]
-    dest_folder = "src" + os.path.sep + "results" + os.path.sep + "N_%i_wlen_%i" % (N, WINDOW_LENGTH) + os.path.sep
+    dest_folder = "src" + os.path.sep + "results" + os.path.sep + config_name + os.path.sep + "N_%i_wlen_%i" \
+                  % (N, WINDOW_LENGTH) + os.path.sep
 
     if not os.path.exists(dest_folder):
         os.makedirs(dest_folder)
@@ -221,9 +226,9 @@ if __name__ == "__main__":
             SEP = []
             SEP_assignments = []
 
-            for index in range(N, len(feature_windows) + 1 - N):
+            for index in range(N + CHANGEPOINT_WINDOW_STEP, len(feature_windows) + 1 - N):
                 print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
-                previous_x = feature_windows[index - N: index]
+                previous_x = feature_windows[index - N - CHANGEPOINT_WINDOW_STEP: index - CHANGEPOINT_WINDOW_STEP]
                 assert len(previous_x) == N
 
                 current_x = feature_windows[index: N + index]
@@ -249,7 +254,7 @@ if __name__ == "__main__":
 
             # filter SEP data and produce DataFrame with performance metrics
             for match_interval in range(MAX_CP_MATCH_INTERVAL):
-                for sep_threshold in np.arange(THRESHOLD_STEP, MAX_SEP_THRESHOLD, THRESHOLD_STEP):
+                for sep_threshold in np.arange(MIN_SEP_THRESHOLD, MAX_SEP_THRESHOLD, THRESHOLD_STEP):
                     # for match_interval in [1, 2]:
                     #     for sep_threshold in [0.05, 0.1]:
 
