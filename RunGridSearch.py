@@ -33,29 +33,63 @@ def get_sep_index_neighbours(sep_index_in_file, all_index_labels, match_interval
     return sep_index_neighbours
 
 
-def compute_positives(SEP_indexes, all_index_labels, match_interval, exclude_other):
+def compute_positives(SEP_indexes, all_index_labels, match_interval, exclude_other=False):
     TP = 0
     FP = 0
 
-    for sep_index in SEP_indexes:
+    for kk, sep_index in enumerate(SEP_indexes):
         sep_index_in_file = sep_index - 1
         sep_index_neighbours = get_sep_index_neighbours(sep_index_in_file, all_index_labels, match_interval)
 
         is_at_least_one_transition = False
 
-        for index in range(1, len(sep_index_neighbours)):
-            if exclude_other:
-                if sep_index_neighbours[index][1] != OTHER_ACTIVITY and sep_index_neighbours[index - 1][
-                    1] != OTHER_ACTIVITY \
-                        and sep_index_neighbours[index][1] != sep_index_neighbours[index - 1][1]:
-                    # print(sep_index_neighbours[index])
+        if match_interval == 0:
+            if sep_index_in_file < len(all_index_labels) - 1:
+                if all_index_labels[sep_index_in_file][1] != all_index_labels[sep_index_in_file + 1][1]:
                     is_at_least_one_transition = True
-                    break
-            else:
-                if sep_index_neighbours[index][1] != sep_index_neighbours[index - 1][1]:
-                    # print(sep_index_neighbours[index])
-                    is_at_least_one_transition = True
-                    break
+        else:
+            for i in range(1, len(sep_index_neighbours)):
+                if exclude_other:
+                    if sep_index_neighbours[i][1] != OTHER_ACTIVITY and sep_index_neighbours[i - 1][
+                        1] != OTHER_ACTIVITY \
+                            and sep_index_neighbours[i][1] != sep_index_neighbours[i - 1][1]:
+                        # print(sep_index_neighbours[index])
+                        is_at_least_one_transition = True
+                        break
+                else:
+                    if sep_index_neighbours[i][1] != sep_index_neighbours[i - 1][1]:
+                        # there is at least one activity transition in the ground truth
+                        event_index = sep_index_neighbours[i - 1][0]
+                        current_sep_index = sep_index_neighbours[match_interval][0]
+
+                        # we want to avoid double counting of TP given the match_interval
+                        # so, we only count the current_sep_index as a TP if an activity change is within
+                        # its match_interval AND there is no previous / next sep index that is CLOSER to that
+                        # activity change
+                        if i < match_interval + 1:
+                            if kk > 1:
+                                prev_sep_index = SEP_indexes[kk - 1] - 1
+                                if prev_sep_index <= current_sep_index - 2 * match_interval:
+                                    is_at_least_one_transition = True
+                                    break
+                                elif abs(current_sep_index - event_index) <= abs(prev_sep_index - event_index):
+                                    is_at_least_one_transition = True
+                                    break
+                            else:
+                                is_at_least_one_transition = True
+                                break
+                        else:
+                            if kk < len(SEP_indexes) - 1:
+                                next_sep_index = SEP_indexes[kk + 1] - 1
+                                if next_sep_index >= current_sep_index + 2 * match_interval:
+                                    is_at_least_one_transition = True
+                                    break
+                                elif abs(current_sep_index - event_index) < abs(next_sep_index - event_index):
+                                    is_at_least_one_transition = True
+                                    break
+                            else:
+                                is_at_least_one_transition = True
+                                break
 
         if is_at_least_one_transition:
             TP = TP + 1
@@ -91,7 +125,7 @@ def compute_negatives(SEP_indexes, all_index_labels, match_interval, exclude_oth
 
         previous_label = all_index_labels[index - 1][1]
 
-        sep_in_range = is_sep_in_range(current_index, SEP_indexes, match_interval)
+        sep_in_range = is_sep_in_range(current_index - 1, SEP_indexes, match_interval)
 
         if not sep_in_range:
             if exclude_other:
@@ -104,6 +138,12 @@ def compute_negatives(SEP_indexes, all_index_labels, match_interval, exclude_oth
                     FN = FN + 1
                 else:
                     TN = TN + 1
+        # else:
+        #     if current_label == previous_label:
+        #         # if an event where there is no activity transition is caught in the sep_range of at least one
+        #         # sep_index, then it is considered a false negative - because, had the event been a transition, it would
+        #         # have been identified as a TP
+        #         FN = FN + 1
 
     return TN, FN
 
@@ -157,9 +197,11 @@ def load_configurations(config_file_path: str):
 if __name__ == "__main__":
     arg_parser = ArgumentParser(description='.')
     arg_parser.add_argument('--config', type=str, required=True)
+    arg_parser.add_argument('--stats-only', type=str, required=False, default=False)
     arg = arg_parser.parse_args()
     
     config_name = os.path.splitext(os.path.basename(arg.config))[0]
+    stats_only = arg.stats_only
     
     CONFIGURATIONS = load_configurations(arg.config)
 
@@ -216,62 +258,93 @@ if __name__ == "__main__":
 
     all_stats = []
 
-    for sigma in KERNEL_PARAM_GRID:
-        for lamda in REGULARIZATION_PARAM_GRID:
+    if not stats_only:
+        for sigma in KERNEL_PARAM_GRID:
+            for lamda in REGULARIZATION_PARAM_GRID:
 
-            print("[INFO] Computing stats for sigma: %5.2f, lambda: %5.2f ..." % (sigma, lamda))
+                print("[INFO] Computing stats for sigma: %5.2f, lambda: %5.2f ..." % (sigma, lamda))
 
-            res_file_name = grid_search_folder + source_file_name + "_res_%3.2f_%3.2f" % (sigma, lamda)
+                res_file_name = grid_search_folder + source_file_name + "_res_%3.2f_%3.2f" % (sigma, lamda)
 
-            SEP = []
-            SEP_assignments = []
+                SEP = []
+                SEP_assignments = []
 
-            for index in range(N + CHANGEPOINT_WINDOW_STEP, len(feature_windows) + 1 - N):
-                # print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
-                previous_x = feature_windows[index - N - CHANGEPOINT_WINDOW_STEP: index - CHANGEPOINT_WINDOW_STEP]
-                assert len(previous_x) == N
+                for index in range(N + CHANGEPOINT_WINDOW_STEP, len(feature_windows) + 1 - N):
+                    # print('Index SEP: ' + str(index) + '/' + str(len(feature_windows) + 1 - N))
+                    previous_x = feature_windows[index - N - CHANGEPOINT_WINDOW_STEP: index - CHANGEPOINT_WINDOW_STEP]
+                    assert len(previous_x) == N
 
-                current_x = feature_windows[index: N + index]
-                assert len(current_x) == N
+                    current_x = feature_windows[index: N + index]
+                    assert len(current_x) == N
 
-                # use previous_x as the Y samples for distribution of f_(t-1)(x) and
-                # use current_x as the X samples for distribution f_t(x) in a call to densratio RuLSIF -
-                densratio_res = densratio(x=np.array(current_x), y=np.array(previous_x), kernel_num=len(previous_x),
-                                          sigma_range=[sigma], lambda_range=[lamda],
-                                          verbose=False)
+                    # use previous_x as the Y samples for distribution of f_(t-1)(x) and
+                    # use current_x as the X samples for distribution f_t(x) in a call to densratio RuLSIF -
+                    densratio_res = densratio(x=np.array(current_x), y=np.array(previous_x), kernel_num=len(previous_x),
+                                              sigma_range=[sigma], lambda_range=[lamda],
+                                              verbose=False)
 
-                g_sum = np.sum(densratio_res.compute_density_ratio(np.array(current_x))) / len(current_x)
-                sep = max(0, 0.5 - g_sum)
+                    g_sum = np.sum(densratio_res.compute_density_ratio(np.array(current_x))) / len(current_x)
+                    sep = max(0, 0.5 - g_sum)
 
-                # sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
-                sensor_index = index - 1 + WINDOW_LENGTH
+                    # sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
+                    sensor_index = index - 1 + WINDOW_LENGTH
 
-                add_sep_assignment(sensor_index, sep, all_events, SEP_assignments, feature_extractor, WINDOW_LENGTH)
+                    add_sep_assignment(sensor_index, sep, all_events, SEP_assignments, feature_extractor, WINDOW_LENGTH)
 
-                SEP.append((round(sep, 4), sensor_index))
+                    SEP.append((round(sep, 4), sensor_index))
 
-            save_sep_data(res_file_name, SEP, SEP_assignments)
+                save_sep_data(res_file_name, SEP, SEP_assignments)
 
-            # filter SEP data and produce DataFrame with performance metrics
-            for match_interval in range(MAX_CP_MATCH_INTERVAL):
-                for sep_threshold in np.arange(MIN_SEP_THRESHOLD, MAX_SEP_THRESHOLD, THRESHOLD_STEP):
-                    # for match_interval in [1, 2]:
-                    #     for sep_threshold in [0.05, 0.1]:
+                # filter SEP data and produce DataFrame with performance metrics
+                for match_interval in range(MAX_CP_MATCH_INTERVAL):
+                    for sep_threshold in np.arange(MIN_SEP_THRESHOLD, MAX_SEP_THRESHOLD, THRESHOLD_STEP):
+                        # for match_interval in [1, 2]:
+                        #     for sep_threshold in [0.05, 0.1]:
 
-                    filtered_SEP = apply_threshold(SEP, sep_threshold)
-                    filtered_SEP = remove_consecutive_SEP_points(filtered_SEP)
+                        filtered_SEP = apply_threshold(SEP, sep_threshold)
+                        filtered_SEP = remove_consecutive_SEP_points(filtered_SEP)
 
-                    stats_dict = compute_statistics(filtered_SEP, all_events, match_interval,
-                                                    EXCLUDE_OTHER_ACTIVITY)
+                        stats_dict = compute_statistics(filtered_SEP, all_events, match_interval,
+                                                        EXCLUDE_OTHER_ACTIVITY)
 
-                    all_stats_dict = {
-                        "sigma": sigma,
-                        "lambda": lamda,
-                        "sep_threshold": sep_threshold,
-                        "match_interval": match_interval
-                    }
-                    all_stats_dict.update(stats_dict)
-                    all_stats.append(all_stats_dict)
+                        all_stats_dict = {
+                            "sigma": sigma,
+                            "lambda": lamda,
+                            "sep_threshold": sep_threshold,
+                            "match_interval": match_interval
+                        }
+                        all_stats_dict.update(stats_dict)
+                        all_stats.append(all_stats_dict)
+    else:
+        for sigma in KERNEL_PARAM_GRID:
+            for lamda in REGULARIZATION_PARAM_GRID:
+                res_file_name = grid_search_folder + source_file_name + "_res_%3.2f_%3.2f" % (sigma, lamda)
+                pickled_sep_results_file = res_file_name + ".pkl"
+
+                if os.path.exists(pickled_sep_results_file):
+                    print("[INFO] Computing stats for sigma: %5.2f, lambda: %5.2f ..." % (sigma, lamda))
+                    SEP = pickle.load(open(pickled_sep_results_file, "rb"))
+
+                    # filter SEP data and produce DataFrame with performance metrics
+                    for match_interval in range(MAX_CP_MATCH_INTERVAL):
+                        for sep_threshold in np.arange(MIN_SEP_THRESHOLD, MAX_SEP_THRESHOLD, THRESHOLD_STEP):
+                            # for match_interval in [1, 2]:
+                            #     for sep_threshold in [0.05, 0.1]:
+
+                            filtered_SEP = apply_threshold(SEP, sep_threshold)
+                            filtered_SEP = remove_consecutive_SEP_points(filtered_SEP)
+
+                            stats_dict = compute_statistics(filtered_SEP, all_events, match_interval,
+                                                            EXCLUDE_OTHER_ACTIVITY)
+
+                            all_stats_dict = {
+                                "sigma": sigma,
+                                "lambda": lamda,
+                                "sep_threshold": sep_threshold,
+                                "match_interval": match_interval
+                            }
+                            all_stats_dict.update(stats_dict)
+                            all_stats.append(all_stats_dict)
 
     all_stats_df = pd.DataFrame(all_stats)
     all_stats_df = all_stats_df.sort_values(by=["f1", "recall", "precision"], ascending=False)

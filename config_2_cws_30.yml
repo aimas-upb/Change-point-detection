@@ -2,7 +2,7 @@ source-file: ./src/data/hh103-two-days.txt
 window-length: 30
 N: 3
 changepoint-window-step: 30
-exclude-other: true
+exclude-other: false
 threshold:
     max: 0.35
     min: 0.05
