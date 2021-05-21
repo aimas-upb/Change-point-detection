@@ -158,7 +158,7 @@ def remove_consecutive_SEP_points(SEP):
                 consecutives.append(SEP[index])
                 index += 1
             
-            non_consecutive.append(max(consecutives, key=lambda x: (x[0], x[1])))
+            non_consecutive.append(max(consecutives, key=lambda x: (x[0], -x[1])))
         
     return non_consecutive
 
