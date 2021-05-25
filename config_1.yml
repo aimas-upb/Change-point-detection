@@ -1,4 +1,4 @@
-source-file: ./src/data/hh103-two-days.txt
+source-file: ./src/data/hh103-two-days-only-activations.txt
 window-length: 30
 N: 3
 changepoint-window-step: 0
