@@ -144,21 +144,17 @@ def remove_consecutive_SEP_points(SEP):
     if len(SEP) == 0:
         return []
 
-    non_consecutive = [SEP[0]]
+    non_consecutive = []
 
-    index = 1
+    index = 0
     while index < len(SEP):
-        if SEP[index][1] != SEP[index - 1][1] + 1:
-            non_consecutive.append(SEP[index])
-            index += 1
-        else:
-            consecutives = [SEP[index]]
-            index += 1
-            while index < len(SEP) and SEP[index][1] == (SEP[index - 1][1] + 1):
-                consecutives.append(SEP[index])
-                index += 1
-            
-            non_consecutive.append(max(consecutives, key=lambda x: (x[0], -x[1])))
+        k = index + 1
+        while k < len(SEP) and SEP[k][1] == SEP[k - 1][1] + 1:
+            k += 1
+
+        consecutives = SEP[index:k]
+        non_consecutive.append(max(consecutives, key=lambda x: (x[0], x[1])))
+        index = k
         
     return non_consecutive
 

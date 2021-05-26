@@ -287,7 +287,7 @@ if __name__ == "__main__":
                     sep = max(0, 0.5 - g_sum)
 
                     # sensor_index = feature_windows.index(previous_x[N - 1]) + WINDOW_LENGTH
-                    sensor_index = index - 1 + WINDOW_LENGTH
+                    sensor_index = index - 1 + WINDOW_LENGTH - CHANGEPOINT_WINDOW_STEP
 
                     add_sep_assignment(sensor_index, sep, all_events, SEP_assignments, feature_extractor, WINDOW_LENGTH)
 
