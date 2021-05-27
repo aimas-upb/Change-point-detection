@@ -1,11 +1,11 @@
 from src.features.base.Feature import Feature
 from src.utils.WindowEventsParser import WindowEventsParser
 
-
 class CountOfEventsFeature(Feature):
 
-    def __init__(self):
+    def __init__(self, mode="proportional"):
         self.name = 'Count of events feature'
+        self.mode = mode
 
     def get_result(self, window):
         result = []
@@ -14,6 +14,10 @@ class CountOfEventsFeature(Feature):
         sensors_names_from_window = [event.sensor.name for event in window.events]
 
         for sensor_name in all_sensor_names:
-            result.append(sensors_names_from_window.count(sensor_name) / len(window.events))
+            sensor_ct = sensors_names_from_window.count(sensor_name)
+            if self.mode == "proportional":
+                result.append(sensor_ct / len(window.events))
+            else:
+                result.append(sensor_ct)
 
         return result

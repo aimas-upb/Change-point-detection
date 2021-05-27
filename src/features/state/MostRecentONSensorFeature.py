@@ -13,7 +13,7 @@ class MostRecentONSensorFeature(Feature):
         parser = WindowEventsParser()
 
         for event in reversed(window.events):
-            if self.is_motion_sensor(self, event.sensor.name):
+            if Feature.is_motion_sensor(event.sensor.name):
                 if event.sensor.state == "ON":
                     return oneHotEncoder.encode_attribute(event.sensor.name, parser.sensor_names)
             else:

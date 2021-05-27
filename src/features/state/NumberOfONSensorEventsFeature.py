@@ -10,7 +10,7 @@ class NumberOfONSensorEventsFeature(Feature):
         ON_sensor_events_count = 0
 
         for event in window.events:
-            if self.is_motion_sensor(self, event.sensor.name):
+            if Feature.is_motion_sensor(event.sensor.name):
                 if event.sensor.state == "ON":
                     ON_sensor_events_count = ON_sensor_events_count + 1
             else:

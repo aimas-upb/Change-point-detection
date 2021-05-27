@@ -1,16 +1,17 @@
 from src.features.base.Feature import Feature
 
 
-class ProportionSensorChangesFeature(Feature):
+class NumberSensorChangesFeature(Feature):
 
-    def __init__(self):
+    def __init__(self, mode="proportional"):
         self.name = 'Number of Sensor Changes'
+        self.mode = mode
 
     def get_result(self, window):
         number_of_transitions = 0
         events = window.events
         
-        activation_events = [ev for ev in events if not Feature.is_motion_sensor(self, ev.sensor.name)
+        activation_events = [ev for ev in events if not Feature.is_motion_sensor(ev.sensor.name)
                              or ev.sensor.state == "ON"]
 
         for i in range(1, len(activation_events)):
@@ -19,5 +20,7 @@ class ProportionSensorChangesFeature(Feature):
     
         if not activation_events:
             return 0.0
-        
+
+        if self.mode == "absolute":
+            return number_of_transitions
         return number_of_transitions / len(activation_events)

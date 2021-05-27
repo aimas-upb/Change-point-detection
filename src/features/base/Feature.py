@@ -38,5 +38,5 @@ class Feature:
         return Feature.get_datetime_diff(current_datetime, previous_datetime, metric=metric)
 
     @staticmethod
-    def is_motion_sensor(self, sensor_name: str):
-        return sensor_name[0].startswith(self.MOTION_SENSOR_PREFIX)
+    def is_motion_sensor(sensor_name: str):
+        return sensor_name[0].startswith(Feature.MOTION_SENSOR_PREFIX)

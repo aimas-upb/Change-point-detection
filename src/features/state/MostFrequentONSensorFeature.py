@@ -18,7 +18,7 @@ class MostFrequentONSensorFeature(Feature):
         active_events_sensor_names = []
 
         for event in window.events:
-            if self.is_motion_sensor(self, event.sensor.name):
+            if Feature.is_motion_sensor(event.sensor.name):
                 if event.sensor.state == "ON":
                     active_events_sensor_names.append(event.sensor.name)
             else:

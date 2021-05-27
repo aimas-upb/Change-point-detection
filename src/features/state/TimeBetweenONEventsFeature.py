@@ -17,8 +17,8 @@ class TimeBetweenONEventsFeature(Feature):
         latest_active_event = events[0]
 
         for i in range(1, number_of_events):
-            if (self.is_motion_sensor(self, events[i].sensor.name) and events[
-                i].sensor.state == "ON") or not self.is_motion_sensor(self, events[i].sensor.name):
+            if (Feature.is_motion_sensor(events[i].sensor.name) and events[i].sensor.state == "ON") or \
+                    not Feature.is_motion_sensor(events[i].sensor.name):
                 result.append(self.get_time_between_two_events(events[i], latest_active_event))
                 latest_active_event = events[i]
             else:

@@ -16,7 +16,7 @@ class CountOfONEventsFeature(Feature):
         sensors_names_from_window = [event.sensor.name for event in window.events]
 
         for sensor_name in all_sensor_names:
-            if self.is_motion_sensor(self, sensor_name):
+            if Feature.is_motion_sensor(sensor_name):
                 result.append(Window.count_active_appearances(window, sensor_name) / len(window.events))
             else:
                 result.append(sensors_names_from_window.count(sensor_name) / len(window.events))
