@@ -13,6 +13,7 @@ from src.features.extractor.FeatureExtractor import FeatureExtractor
 from src.models.Window import Window
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser
+from src.features.base.Feature import Feature
 
 OTHER_ACTIVITY = "Other_Activity"
 
@@ -33,7 +34,8 @@ def get_sep_index_neighbours(sep_index_in_file, all_index_labels, match_interval
     return sep_index_neighbours
 
 
-def compute_positives(SEP_indexes, all_index_labels, match_interval, exclude_other=False):
+def compute_positives(SEP_indexes, all_events, match_interval, exclude_other=False):
+    all_index_labels = [(ev.index, ev.label) for ev in all_events]
     TP = 0
     FP = 0
 
@@ -49,47 +51,39 @@ def compute_positives(SEP_indexes, all_index_labels, match_interval, exclude_oth
                     is_at_least_one_transition = True
         else:
             for i in range(1, len(sep_index_neighbours)):
-                if exclude_other:
-                    if sep_index_neighbours[i][1] != OTHER_ACTIVITY and sep_index_neighbours[i - 1][
-                        1] != OTHER_ACTIVITY \
-                            and sep_index_neighbours[i][1] != sep_index_neighbours[i - 1][1]:
-                        # print(sep_index_neighbours[index])
-                        is_at_least_one_transition = True
-                        break
-                else:
-                    if sep_index_neighbours[i][1] != sep_index_neighbours[i - 1][1]:
-                        # there is at least one activity transition in the ground truth
-                        event_index = sep_index_neighbours[i - 1][0]
-                        current_sep_index = sep_index_neighbours[match_interval][0]
+                if sep_index_neighbours[i][1] != sep_index_neighbours[i - 1][1]:
+                    # there is at least one activity transition in the ground truth
+                    event_index = sep_index_neighbours[i - 1][0]
+                    current_sep_index = sep_index_neighbours[match_interval][0]
 
-                        # we want to avoid double counting of TP given the match_interval
-                        # so, we only count the current_sep_index as a TP if an activity change is within
-                        # its match_interval AND there is no previous / next sep index that is CLOSER to that
-                        # activity change
-                        if i < match_interval + 1:
-                            if kk > 1:
-                                prev_sep_index = SEP_indexes[kk - 1] - 1
-                                if prev_sep_index <= current_sep_index - 2 * match_interval:
-                                    is_at_least_one_transition = True
-                                    break
-                                elif abs(current_sep_index - event_index) <= abs(prev_sep_index - event_index):
-                                    is_at_least_one_transition = True
-                                    break
-                            else:
+                    # we want to avoid double counting of TP given the match_interval
+                    # so, we only count the current_sep_index as a TP if an activity change is within
+                    # its match_interval AND there is no previous / next sep index that is CLOSER to that
+                    # activity change
+                    if i < match_interval + 1:
+                        if kk > 1:
+                            prev_sep_index = SEP_indexes[kk - 1] - 1
+                            if prev_sep_index <= current_sep_index - 2 * match_interval:
+                                is_at_least_one_transition = True
+                                break
+                            elif abs(current_sep_index - event_index) <= abs(prev_sep_index - event_index):
                                 is_at_least_one_transition = True
                                 break
                         else:
-                            if kk < len(SEP_indexes) - 1:
-                                next_sep_index = SEP_indexes[kk + 1] - 1
-                                if next_sep_index >= current_sep_index + 2 * match_interval:
-                                    is_at_least_one_transition = True
-                                    break
-                                elif abs(current_sep_index - event_index) < abs(next_sep_index - event_index):
-                                    is_at_least_one_transition = True
-                                    break
-                            else:
+                            is_at_least_one_transition = True
+                            break
+                    else:
+                        if kk < len(SEP_indexes) - 1:
+                            next_sep_index = SEP_indexes[kk + 1] - 1
+                            if next_sep_index >= current_sep_index + 2 * match_interval:
                                 is_at_least_one_transition = True
                                 break
+                            elif abs(current_sep_index - event_index) < abs(next_sep_index - event_index):
+                                is_at_least_one_transition = True
+                                break
+                        else:
+                            is_at_least_one_transition = True
+                            break
 
         if is_at_least_one_transition:
             TP = TP + 1
@@ -115,29 +109,50 @@ def is_sep_in_range(current_index, SEP_indexes, match_interval):
     return False
 
 
-def compute_negatives(SEP_indexes, all_index_labels, match_interval, exclude_other):
+def get_activity_slice(all_events, start_index, activity_label, direction = 1):
+    idx = start_index
+    while 0 <= idx and idx < len(all_events) and all_events[idx].label == activity_label:
+        idx += direction
+
+    return all_events[min(start_index, idx) : max(start_index, idx)]
+
+def num_activations_in_event_slice(event_slice):
+    activations = 0
+    for ev in event_slice:
+        if Feature.is_motion_sensor(ev.sensor.name):
+            if ev.sensor.state == "ON":
+                activations += 1
+        else:
+            activations += 1
+
+    return activations
+
+
+def compute_negatives(SEP_indexes, all_events, match_interval, exclude_other):
     FN = 0
     TN = 0
 
-    for index in range(1, len(all_index_labels)):
-        current_index = all_index_labels[index][0]
-        current_label = all_index_labels[index][1]
+    index = 0
+    while index < len(all_events) - 1:
+        index += 1
 
-        previous_label = all_index_labels[index - 1][1]
+        current_index = all_events[index].index
+        current_label = all_events[index].label
+
+        previous_label = all_events[index - 1].label
 
         sep_in_range = is_sep_in_range(current_index - 1, SEP_indexes, match_interval)
 
         if not sep_in_range:
-            if exclude_other:
-                if current_label != OTHER_ACTIVITY and previous_label != OTHER_ACTIVITY and current_label != previous_label:
-                    FN = FN + 1
+            if current_label != previous_label:
+                if exclude_other and current_label == OTHER_ACTIVITY:
+                    continuous_other = get_activity_slice(all_events, index, OTHER_ACTIVITY)
+                    if num_activations_in_event_slice(continuous_other) <= 2:
+                        index += len(continuous_other)
                 else:
-                    TN = TN + 1
+                    FN = FN + 1
             else:
-                if current_label != previous_label:
-                    FN = FN + 1
-                else:
-                    TN = TN + 1
+                TN = TN + 1
         # else:
         #     if current_label == previous_label:
         #         # if an event where there is no activity transition is caught in the sep_range of at least one
@@ -148,18 +163,17 @@ def compute_negatives(SEP_indexes, all_index_labels, match_interval, exclude_oth
     return TN, FN
 
 
-def count_statistics(SEP, all_index_labels, match_interval, exclude_other):
+def count_statistics(SEP, all_events, match_interval, exclude_other):
     SEP_indexes = [tup[1] for tup in SEP]
 
-    TP, FP = compute_positives(SEP_indexes, all_index_labels, match_interval, exclude_other)
-    TN, FN = compute_negatives(SEP_indexes, all_index_labels, match_interval, exclude_other)
+    TP, FP = compute_positives(SEP_indexes, all_events, match_interval, exclude_other)
+    TN, FN = compute_negatives(SEP_indexes, all_events, match_interval, exclude_other)
 
     return FN, FP, TN, TP
 
 
 def compute_statistics(SEP, all_events, match_interval, exclude_other):
-    all_index_labels = [(ev.index, ev.label) for ev in all_events]
-    FN, FP, TN, TP = count_statistics(SEP, all_index_labels, match_interval, exclude_other)
+    FN, FP, TN, TP = count_statistics(SEP, all_events, match_interval, exclude_other)
 
     precision = 0
     if TP + FP != 0:
@@ -168,6 +182,12 @@ def compute_statistics(SEP, all_events, match_interval, exclude_other):
     recall = 0
     if TP + FN != 0:
         recall = TP / (TP + FN)
+
+    tpr = recall
+
+    fpr = 0
+    if TN + FP != 0:
+        fpr = FP / (TN + FP)
 
     accuracy = 0
     if TP + FP + TN + FN != 0:
@@ -184,6 +204,8 @@ def compute_statistics(SEP, all_events, match_interval, exclude_other):
         "fn": FN,
         "precision": precision,
         "recall": recall,
+        "tpr": tpr,
+        "fpr": fpr,
         "accuracy": accuracy,
         "f1": f1
     }
@@ -291,7 +313,7 @@ if __name__ == "__main__":
 
                     add_sep_assignment(sensor_index, sep, all_events, SEP_assignments, feature_extractor, WINDOW_LENGTH)
 
-                    SEP.append((round(sep, 4), sensor_index))
+                    SEP.append((sep, sensor_index))
 
                 save_sep_data(res_file_name, SEP, SEP_assignments)
 
@@ -348,7 +370,7 @@ if __name__ == "__main__":
 
     all_stats_df = pd.DataFrame(all_stats)
     all_stats_df = all_stats_df.sort_values(by=["f1", "recall", "precision"], ascending=False)
-    all_stats_file = grid_search_folder + source_file_name + "_all_stats" + ".xlsx"
+    all_stats_file = grid_search_folder + source_file_name + "_" + config_name + "_all_stats" + ".xlsx"
 
     max_precision_idx = all_stats_df["precision"].idxmax()
     max_recall_idx = all_stats_df["recall"].idxmax()

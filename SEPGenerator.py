@@ -11,7 +11,7 @@ from densratio import densratio
 from src.features.CountOfEventsFeature import CountOfEventsFeature
 from src.features.DominantLocationFeature import DominantLocationFeature
 from src.features.EachSensorLastActivationFeature import EachSensorLastActivationFeature
-from src.features.EntropyFeature import EntropyFeature
+from src.features.EntropyFeature import EntropyFeature, TemporalEntropyFeature
 from src.features.LastSensorLocation import LastSensorLocationFeature
 from src.features.MostFrequentSensorFeature import MostFrequentSensorFeature
 from src.features.MostRecentSensorFeature import MostRecentSensorFeature
@@ -25,7 +25,7 @@ from src.features.state.MostFrequentONSensorFeature import MostFrequentONSensorF
 from src.features.state.MostRecentONSensorFeature import MostRecentONSensorFeature
 from src.features.state.NumberOfONSensorEventsFeature import NumberOfONSensorEventsFeature
 from src.features.state.TimeBetweenONEventsFeature import TimeBetweenONEventsFeature
-from src.features.ProportionSensorChangesFeature import ProportionSensorChangesFeature
+from src.features.NumberSensorChangesFeature import NumberSensorChangesFeature
 from src.models.Window import Window
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser

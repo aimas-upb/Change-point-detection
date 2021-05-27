@@ -1,0 +1,18 @@
+source-file: ./src/data/hh103-two-days-only-activations.txt
+window-length: 30
+N: 3
+changepoint-window-step: 0
+exclude-other: true
+threshold:
+    max: 0.35
+    min: 0.05
+    step: 0.02
+max-cp-match-interval: 6
+kernel-param-grid: [5, 7.5, 10]
+regularization-param-grid: [0.8, 0.9, 1, 2, 5]
+features: [WindowDurationFeature, MostRecentSensorFeature, MostFrequentSensorFeature, LastSensorLocationFeature,
+           DominantLocationFeature, NumberOfTransitionsFeature,
+           TemporalEntropyFeature, CountOfEventsFeature('absolute'), NumberSensorChangesFeature('absolute'),
+           EachSensorLastActivationFeature,
+           TimeBetweenEventsFeature('proportional')]
+
