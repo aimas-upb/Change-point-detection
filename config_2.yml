@@ -2,12 +2,12 @@ source-file: ./src/data/hh103-two-days-only-activations.txt
 window-length: 30
 N: 3
 changepoint-window-step: 0
-exclude-other: false
+exclude-other: true
 threshold:
     max: 0.35
     min: 0.05
     step: 0.05
-max-cp-match-interval: 9
+max-cp-match-interval: 7
 kernel-param-grid: [5, 7.5, 10, 15]
 regularization-param-grid: [0.8, 0.9, 1, 2, 5]
 features: [WindowDurationFeature, MostRecentSensorFeature, LastSensorLocationFeature,
