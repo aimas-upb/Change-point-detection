@@ -1,6 +1,7 @@
 import time
 from abc import abstractmethod
 from datetime import datetime
+from src.models.Event import Event
 
 
 class Feature:
@@ -8,6 +9,8 @@ class Feature:
     SEC = "seconds"
     MIN = "minutes"
     MOTION_SENSOR_PREFIX = "M"
+    LIGHT_SENSOR_PREFIX = "L"
+
     
     @abstractmethod
     def get_result(self, window):
@@ -40,3 +43,14 @@ class Feature:
     @staticmethod
     def is_motion_sensor(sensor_name: str):
         return sensor_name[0].startswith(Feature.MOTION_SENSOR_PREFIX)
+
+    @staticmethod
+    def is_light_sensor(sensor_name: str):
+        return sensor_name[0].startswith(Feature.LIGHT_SENSOR_PREFIX)
+
+    @staticmethod
+    def is_activation(event: Event):
+        if (Feature.is_motion_sensor(event.sensor.name) or Feature.is_light_sensor(event.sensor.name)) and \
+            event.sensor.state == "OFF":
+            return False
+        return True

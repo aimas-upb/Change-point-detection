@@ -16,7 +16,8 @@ from src.features.LastSensorLocation import LastSensorLocationFeature
 from src.features.MostFrequentSensorFeature import MostFrequentSensorFeature
 from src.features.MostRecentSensorFeature import MostRecentSensorFeature
 from src.features.NumberOfTransitionsFeature import NumberOfTransitionsFeature
-from src.features.TimeBetweenEventsFeature import TimeBetweenEventsFeature
+from src.features.TimeBetweenEventsFeature import TimeBetweenEventsFeature, AvgTimeBetweenActivations, \
+    MedianTimeBetweenActivations
 from src.features.WindowDurationFeature import WindowDurationFeature
 from src.features.extractor.FeatureExtractor import FeatureExtractor
 from src.features.state.CountOfONEventsFeature import CountOfONEventsFeature
