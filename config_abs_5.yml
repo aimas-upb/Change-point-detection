@@ -12,7 +12,8 @@ kernel-param-grid: [5, 7.5, 10]
 regularization-param-grid: [0.8, 0.9, 1, 2, 5]
 features: [WindowDurationFeature, MostRecentSensorFeature, MostFrequentSensorFeature, LastSensorLocationFeature,
            DominantLocationFeature, NumberOfTransitionsFeature,
-           EntropyFeature, CountOfEventsFeature('absolute'), NumberSensorChangesFeature('absolute'),
+           EntropyFeature, TemporalEntropyFeature,
+           CountOfEventsFeature('absolute'), NumberSensorChangesFeature('absolute'),
            EachSensorLastActivationFeature,
            AvgTimeBetweenActivations('proportional'), MedianTimeBetweenActivations('proportional')]
 
