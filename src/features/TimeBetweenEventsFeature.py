@@ -118,13 +118,14 @@ class StatsTimeBetweenActivations(Feature):
 
         crt_idx = prev_idx + 1
         while crt_idx < number_of_events:
-            while not Feature.is_activation(events[crt_idx]) and crt_idx < number_of_events:
+            while crt_idx < number_of_events and not Feature.is_activation(events[crt_idx]):
                 crt_idx += 1
-
-            if Feature.is_activation(events[crt_idx]):
-                result.append(Feature.get_event_ts_diff(events[crt_idx], events[prev_idx], metric=Feature.MIN))
-                prev_idx = crt_idx
-                crt_idx = prev_idx + 1
+            
+            if crt_idx < number_of_events:
+                if Feature.is_activation(events[crt_idx]):
+                    result.append(Feature.get_event_ts_diff(events[crt_idx], events[prev_idx], metric=Feature.MIN))
+                    prev_idx = crt_idx
+                    crt_idx = prev_idx + 1
 
         if not result:
             return 0.0
