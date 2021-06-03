@@ -1,0 +1,10 @@
+data-set: ./src/data/hh103-two-days-only-activations.txt
+change-points: .
+train-data: .
+test-data: .
+features: [WindowDurationFeature, MostRecentSensorFeature, MostFrequentSensorFeature,
+           LastSensorLocationFeature, DominantLocationFeature,
+           NumberOfTransitionsFeature, NumberSensorChangesFeature, EntropyFeature, CountOfEventsFeature,
+           EachSensorLastActivationFeature,
+           TimeBetweenEventsFeature('absolute'), TimeBetweenEventsFeature('proportional')]
+
