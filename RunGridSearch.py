@@ -220,7 +220,7 @@ if __name__ == "__main__":
     arg_parser = ArgumentParser(description='.')
     arg_parser.add_argument('--config', type=str, required=True)
     arg_parser.add_argument('--stats-only', type=str, required=False, default=False)
-    arg_parser.add_argument('--save_sep', type=str, required=False, default=True)
+    arg_parser.add_argument('--save-sep', type=str, required=False, default=True)
     arg_parser.add_argument('--src', type=str, required=False)
     arg = arg_parser.parse_args()
     
