@@ -220,10 +220,14 @@ if __name__ == "__main__":
     arg_parser = ArgumentParser(description='.')
     arg_parser.add_argument('--config', type=str, required=True)
     arg_parser.add_argument('--stats-only', type=str, required=False, default=False)
+    arg_parser.add_argument('--save_sep', type=str, required=False, default=True)
+    arg_parser.add_argument('--src', type=str, required=False)
     arg = arg_parser.parse_args()
     
     config_name = os.path.splitext(os.path.basename(arg.config))[0]
     stats_only = arg.stats_only
+    save_sep = arg.save_sep
+    src = arg.src
     
     CONFIGURATIONS = load_configurations(arg.config)
 
@@ -231,6 +235,9 @@ if __name__ == "__main__":
     CHANGEPOINT_WINDOW_STEP = CONFIGURATIONS['changepoint-window-step']
     FEATURES = CONFIGURATIONS['features']
     DATA_SET = CONFIGURATIONS['source-file']
+    if src:
+        DATA_SET = src
+    
     WINDOW_LENGTH = CONFIGURATIONS['window-length']
     THRESHOLD_STEP = CONFIGURATIONS['threshold']['step']
     MAX_SEP_THRESHOLD = CONFIGURATIONS['threshold']['max']
@@ -244,7 +251,7 @@ if __name__ == "__main__":
     parser = WindowEventsParser()
     parser.read_data_from_file(DATA_SET)
     all_events = parser.events
-
+    
     # features
     # defines the list of features that will be extracted from each window
     features = build_features_from_config(FEATURES)
@@ -314,11 +321,12 @@ if __name__ == "__main__":
                     add_sep_assignment(sensor_index, sep, all_events, SEP_assignments, feature_extractor, WINDOW_LENGTH)
 
                     SEP.append((sep, sensor_index))
-
-                save_sep_data(res_file_name, SEP, SEP_assignments)
+                
+                if save_sep:
+                    save_sep_data(res_file_name, SEP, SEP_assignments)
 
                 # filter SEP data and produce DataFrame with performance metrics
-                for match_interval in range(MAX_CP_MATCH_INTERVAL):
+                for match_interval in range(MAX_CP_MATCH_INTERVAL - 1, MAX_CP_MATCH_INTERVAL):
                     for sep_threshold in np.arange(MIN_SEP_THRESHOLD, MAX_SEP_THRESHOLD, THRESHOLD_STEP):
                         # for match_interval in [1, 2]:
                         #     for sep_threshold in [0.05, 0.1]:
