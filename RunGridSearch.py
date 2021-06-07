@@ -1,7 +1,7 @@
 import os
 import pickle
+from distutils.util import strtobool
 from argparse import ArgumentParser
-
 import numpy as np
 import pandas as pd
 import yaml
@@ -17,6 +17,8 @@ from src.features.base.Feature import Feature
 
 OTHER_ACTIVITY = "Other_Activity"
 
+
+np.seterr(all='ignore')
 
 def get_sep_index_neighbours(sep_index_in_file, all_index_labels, match_interval):
     sep_index_neighbours = []
@@ -219,8 +221,8 @@ def load_configurations(config_file_path: str):
 if __name__ == "__main__":
     arg_parser = ArgumentParser(description='.')
     arg_parser.add_argument('--config', type=str, required=True)
-    arg_parser.add_argument('--stats-only', type=str, required=False, default=False)
-    arg_parser.add_argument('--save-sep', type=str, required=False, default=True)
+    arg_parser.add_argument('--stats-only', type=lambda x: bool(strtobool(x)), required=False, default=False)
+    arg_parser.add_argument('--save-sep', type=lambda x: bool(strtobool(x)), required=False, default=True)
     arg_parser.add_argument('--src', type=str, required=False)
     arg = arg_parser.parse_args()
     
@@ -228,7 +230,7 @@ if __name__ == "__main__":
     stats_only = arg.stats_only
     save_sep = arg.save_sep
     src = arg.src
-    
+
     CONFIGURATIONS = load_configurations(arg.config)
 
     N = CONFIGURATIONS['N']
