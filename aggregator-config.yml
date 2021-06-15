@@ -1,15 +1,19 @@
 window-length: 30
-data-set: './src/data/hh103-two-days.txt'
-N: 2
+data-set: './src/data/hh101-with-locations-only-activations.txt'
+N: 3
 threshold: 0.3
-kernel-param: 15
-regularization-param: 0.5
+kernel-param: 7.5
+regularization-param: 5
 exclude-other: true
 max-cp-match-interval: 2
-kn-results-location: './src/data/knowledge-driven/hh103-two-days.json'
-only-DD: true
+kn-results-location: './src/data/knowledge-driven/hh101-with-locations-only-activations-all.json'
+only-DD: false
 only-KD: false
-DD-and-KD: false
-features: [WindowDurationFeature, MostFrequentSensorFeature,
-          DominantLocationFeature, NumberOfTransitionsFeature, CountOfEventsFeature, NumberSensorChangesFeature,
-          TimeBetweenEventsFeature('proportional')]
+DD-and-KD: true
+features: [WindowDurationFeature,
+           MostRecentSensorFeature, MostFrequentSensorFeature, LastSensorLocationFeature,
+           DominantLocationFeature, NumberOfTransitionsFeature,
+           EntropyFeature, TemporalEntropyFeature,
+           CountOfEventsFeature('absolute'), NumberSensorChangesFeature('absolute'),
+           EachSensorLastActivationFeature,
+           StatsTimeBetweenActivations('absolute')]

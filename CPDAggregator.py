@@ -58,7 +58,6 @@ def get_data_driven_SEP_points(feature_windows, N, kernel_param, regularization_
 
         g_sum = np.sum(densratio_res.compute_density_ratio(np.array(current_x))) / len(current_x)
         sep = max(0, 0.5 - g_sum)
-        print(g_sum)
 
         sensor_index = index - 1 + window_length
         SEP.append((sep, sensor_index))
@@ -71,7 +70,9 @@ def get_knowledge_driven_SEP_points(KN_results_location):
     json_array = json.load(input_file)
     KD_SEP = []
 
-    for index in json_array["indexes"]:
+    indexes = list(dict.fromkeys(json_array["indexes"]))
+
+    for index in indexes:
         CP_index = index.split()[1]
         KD_SEP.append((0.5, int(CP_index)))
 
@@ -123,7 +124,8 @@ def save_performance_results(all_stats):
 
     all_stats_df = pd.DataFrame(all_stats)
     all_stats_df = all_stats_df.sort_values(by=["f1", "recall", "precision"], ascending=False)
-    all_stats_file = results_folder + source_file_name + "_" + config_name + "_all_stats" + ".xlsx"
+    all_stats_file = results_folder + source_file_name + "_k=" + str(KERNEL_PARAM) + "_l=" + str(REGULARIZATION_PARAM) + \
+                     "_t=" + str(THRESHOLD) + "_test.xlsx"
 
     max_precision_idx = all_stats_df["precision"].idxmax()
     max_recall_idx = all_stats_df["recall"].idxmax()
@@ -172,15 +174,28 @@ if __name__ == "__main__":
     KD_SEP = []
     SEP = []
 
+    DD = 'DD' if ONLY_DATA_DRIVEN else ''
+    KD = 'DD' if ONLY_KNOWLEDGE_DRIVEN else ''
+    BOTH = 'DD&KD' if DATA_DRIVEN_AND_KNOWLEDGE_DRIVEN else ''
+
+    source_file_name = os.path.splitext(os.path.basename(DATA_SET))[0]
+    dest_folder = "src" + os.path.sep + "results" + os.path.sep + "sep" + os.path.sep
+    dest_file = dest_folder + source_file_name + "_k=" + str(KERNEL_PARAM) + "_l=" + str(REGULARIZATION_PARAM) + \
+                     "_t=" + str(THRESHOLD) + DD + "_" + KD + "_" + BOTH + "_sep.pkl"
+
     if ONLY_DATA_DRIVEN or DATA_DRIVEN_AND_KNOWLEDGE_DRIVEN:
         features = build_features_from_config(FEATURES)
         feature_extractor = FeatureExtractor(features)
         feature_windows = build_feature_window(all_events, WINDOW_LENGTH, DATA_SET, feature_extractor)
 
         # gets list of SEP points in data driven approach
-        DD_SEP = get_data_driven_SEP_points(feature_windows, N, KERNEL_PARAM, REGULARIZATION_PARAM, WINDOW_LENGTH)
-        DD_SEP = apply_threshold(DD_SEP, THRESHOLD)
-        DD_SEP = remove_consecutive_SEP_points(DD_SEP)
+        if os.path.exists(dest_file):
+            DD_SEP = pickle.load(open(dest_file, "rb"))
+        else:
+            DD_SEP = get_data_driven_SEP_points(feature_windows, N, KERNEL_PARAM, REGULARIZATION_PARAM, WINDOW_LENGTH)
+            DD_SEP = apply_threshold(DD_SEP, THRESHOLD)
+            DD_SEP = remove_consecutive_SEP_points(DD_SEP)
+            pickle.dump(DD_SEP, open(dest_file, "wb"))
         SEP = DD_SEP
 
     if ONLY_KNOWLEDGE_DRIVEN or DATA_DRIVEN_AND_KNOWLEDGE_DRIVEN:
@@ -190,7 +205,16 @@ if __name__ == "__main__":
 
     if DATA_DRIVEN_AND_KNOWLEDGE_DRIVEN:
         # combines the two approaches
+        print("DD: " + str(DD_SEP))
+        print("KD: " + str(KD_SEP))
         SEP = combine_approaches(DD_SEP, KD_SEP)
+        print(SEP)
+
+        # dest_folder = "src" + os.path.sep + "results" + os.path.sep + "sep_final" + os.path.sep
+        # dest_file = dest_folder + source_file_name + "_k=" + str(KERNEL_PARAM) + "_l=" + str(REGULARIZATION_PARAM) + \
+        #             "_t=" + str(THRESHOLD) + DD + "_" + KD + "_" + BOTH + "_sep_final.pkl"
+        #
+        # pickle.dump(SEP, open(dest_file, "wb"))
 
     # compute performance statistics
     PERFORMANCE_RESULTS = compute_performance_results(MAX_CP_MATCH_INTERVAL, SEP, THRESHOLD, EXCLUDE_OTHER_ACTIVITY, KERNEL_PARAM, REGULARIZATION_PARAM)

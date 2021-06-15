@@ -18,6 +18,10 @@ class WindowEventsParser:
 
         for index in range(0, len(lines)):
             elements = lines[index].split()
+
+            if len(elements) == 0:
+                continue
+
             date = elements[0]
             time = elements[1]
             label = elements[-1]

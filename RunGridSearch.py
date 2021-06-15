@@ -9,11 +9,11 @@ from densratio import densratio
 
 from CPDStatisticsGenerator import apply_threshold, remove_consecutive_SEP_points
 from SEPGenerator import build_features_from_config, save_sep_data, add_sep_assignment
+from src.features.base.Feature import Feature
 from src.features.extractor.FeatureExtractor import FeatureExtractor
 from src.models.Window import Window
 from src.utils.Encoder import Encoder
 from src.utils.WindowEventsParser import WindowEventsParser
-from src.features.base.Feature import Feature
 
 OTHER_ACTIVITY = "Other_Activity"
 
@@ -22,7 +22,7 @@ def get_sep_index_neighbours(sep_index_in_file, all_index_labels, match_interval
     sep_index_neighbours = []
 
     for index in range(-match_interval, 0):
-        if sep_index_in_file + index >= 0:
+        if 0 <= sep_index_in_file + index < len(all_index_labels):
             sep_index_neighbours.append(all_index_labels[sep_index_in_file + index])
 
     for index in range(match_interval + 1):
