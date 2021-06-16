@@ -1,12 +1,12 @@
 window-length: 30
-data-set: './src/data/hh101-with-locations-only-activations.txt'
+data-set: './src/data/hh103-with-locations-only-activations.txt'
 N: 3
 threshold: 0.3
 kernel-param: 7.5
 regularization-param: 5
 exclude-other: true
 max-cp-match-interval: 2
-kn-results-location: './src/data/knowledge-driven/hh101-with-locations-only-activations-all.json'
+kn-results-location: './src/data/knowledge-driven/hh103-with-locations-only-activations-1-2-3-4-5.json'
 only-DD: false
 only-KD: false
 DD-and-KD: true

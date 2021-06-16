@@ -210,11 +210,11 @@ if __name__ == "__main__":
         SEP = combine_approaches(DD_SEP, KD_SEP)
         print(SEP)
 
-        # dest_folder = "src" + os.path.sep + "results" + os.path.sep + "sep_final" + os.path.sep
-        # dest_file = dest_folder + source_file_name + "_k=" + str(KERNEL_PARAM) + "_l=" + str(REGULARIZATION_PARAM) + \
-        #             "_t=" + str(THRESHOLD) + DD + "_" + KD + "_" + BOTH + "_sep_final.pkl"
-        #
-        # pickle.dump(SEP, open(dest_file, "wb"))
+        dest_folder = "src" + os.path.sep + "results" + os.path.sep + "sep_final" + os.path.sep
+        dest_file = dest_folder + source_file_name + "_k=" + str(KERNEL_PARAM) + "_l=" + str(REGULARIZATION_PARAM) + \
+                    "_t=" + str(THRESHOLD) + DD + "_" + KD + "_" + BOTH + "_sep_removed_consecutive.pkl"
+
+        pickle.dump(SEP, open(dest_file, "wb"))
 
     # compute performance statistics
     PERFORMANCE_RESULTS = compute_performance_results(MAX_CP_MATCH_INTERVAL, SEP, THRESHOLD, EXCLUDE_OTHER_ACTIVITY, KERNEL_PARAM, REGULARIZATION_PARAM)

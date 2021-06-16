@@ -141,14 +141,11 @@ if __name__ == "__main__":
             activity_start_index = change_points[change_point_index - 1]
             activity_end_index = change_points[change_point_index]
 
-            # print("CPD INDEXES: " + str(activity_start_index) + " -- " + str(activity_end_index))
-
             if min_train_index <= activity_start_index <= max_train_index and min_train_index <= activity_end_index <= max_train_index:
                 window = Window(ALL_EVENTS[activity_start_index:activity_end_index])
 
                 feature_window = feature_extractor.extract_features_from_window(window)
                 fw_length = len(feature_window)
-                print(fw_length)
                 # print(len(feature_window))
                 X_TRAIN.extend(feature_window)
                 Y_TRAIN.append(get_dominant_label(window))
@@ -163,7 +160,8 @@ if __name__ == "__main__":
         print(str(Counter(Y_TRAIN)))
         print(str(Counter(Y_TEST)))
 
-        clf = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, random_state=0)
+        clf = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=0)
+        # clf = RandomForestClassifier(random_state=0, class_weight="balanced")
 
         X_TRAIN = np.reshape(X_TRAIN, (len(Y_TRAIN), fw_length))
         X_TEST = np.reshape(X_TEST, (len(Y_TEST), fw_length))

@@ -12,15 +12,16 @@ from src.features.CountOfEventsFeature import CountOfEventsFeature
 from src.features.DayOfWeekFeature import DayOfWeekFeature
 from src.features.DominantLocationFeature import DominantLocationFeature
 from src.features.EachSensorLastActivationFeature import EachSensorLastActivationFeature
-from src.features.EntropyFeature import EntropyFeature
+from src.features.EntropyFeature import EntropyFeature, TemporalEntropyFeature
 from src.features.HourOfDayFeature import HourOfDayFeature
 from src.features.LastSensorLocation import LastSensorLocationFeature
 from src.features.MostFrequentSensorFeature import MostFrequentSensorFeature
 from src.features.MostRecentSensorFeature import MostRecentSensorFeature
 from src.features.NumberOfSensorEventsFeature import NumberOfSensorEventsFeature
 from src.features.NumberOfTransitionsFeature import NumberOfTransitionsFeature
+from src.features.NumberSensorChangesFeature import NumberSensorChangesFeature
 from src.features.SecondsPastMidNightFeature import SecondsPastMidNightFeature
-from src.features.TimeBetweenEventsFeature import TimeBetweenEventsFeature
+from src.features.TimeBetweenEventsFeature import TimeBetweenEventsFeature, StatsTimeBetweenActivations
 from src.features.WindowDurationFeature import WindowDurationFeature
 from src.features.extractor.FeatureExtractor import FeatureExtractor
 from src.features.state.CountOfONEventsFeature import CountOfONEventsFeature
@@ -75,6 +76,9 @@ def build_features():
     proportional_time_between_ON_events_feature = TimeBetweenONEventsFeature('proportional')
 
     day_of_week_feature = DayOfWeekFeature()
+    a = NumberSensorChangesFeature()
+    b = TemporalEntropyFeature()
+    c = StatsTimeBetweenActivations('absolute')
     hour_of_day_feature = HourOfDayFeature()
     seconds_past_mid_night_feature = SecondsPastMidNightFeature()
     each_sensor_last_activation_time_feature = EachSensorLastActivationFeature()

@@ -1,14 +1,14 @@
 data-set: ./src/data/hh103-with-locations-only-activations.txt
-change-points: ./src/results/sep_final/hh103-with-locations-only-activations_k=7.5_l=5_t=0.3__DD&KD_sep_final.pkl
-folds: 1
-#features: [WindowDurationFeature, MostRecentSensorFeature, MostFrequentSensorFeature,
-#           LastSensorLocationFeature, DominantLocationFeature,
-#           NumberOfTransitionsFeature, NumberSensorChangesFeature, EntropyFeature, CountOfEventsFeature,
-#           DayOfWeekFeature, HourOfDayFeature, NumberOfSensorEventsFeature, SecondsPastMidNightFeature, EachSensorLastActivationFeature]
-features: [WindowDurationFeature,
-           MostRecentSensorFeature, MostFrequentSensorFeature, LastSensorLocationFeature,
-           DominantLocationFeature, NumberOfTransitionsFeature,
-           EntropyFeature, TemporalEntropyFeature,
-           CountOfEventsFeature('absolute'), NumberSensorChangesFeature('absolute'),
-           EachSensorLastActivationFeature,
-           StatsTimeBetweenActivations('absolute')]
+change-points: ./src/results/sep_final/hh103-with-locations-only-activations_k=7.5_l=5_t=0.3__DD&KD_sep_5_consecutive.pkl
+folds: 3
+features: [WindowDurationFeature, MostRecentSensorFeature, MostFrequentSensorFeature,
+           LastSensorLocationFeature, DominantLocationFeature,
+           NumberOfTransitionsFeature, NumberSensorChangesFeature, EntropyFeature, CountOfEventsFeature,
+           DayOfWeekFeature, HourOfDayFeature, NumberOfSensorEventsFeature, SecondsPastMidNightFeature, EachSensorLastActivationFeature]
+#features: [WindowDurationFeature,
+#           MostRecentSensorFeature, MostFrequentSensorFeature, LastSensorLocationFeature,
+#           DominantLocationFeature, NumberOfTransitionsFeature,
+#           EntropyFeature, TemporalEntropyFeature,
+#           CountOfEventsFeature('absolute'), NumberSensorChangesFeature('absolute'),
+#           EachSensorLastActivationFeature,
+#           StatsTimeBetweenActivations('absolute')]
